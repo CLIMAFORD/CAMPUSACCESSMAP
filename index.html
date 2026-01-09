@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="css/L.Control.Locate.min.css">
     <link rel="stylesheet" href="css/leaflet.photon.css">
     <link rel="stylesheet" href="css/leaflet-measure.css">
-    <link rel="stylesheet" href="css/fontawesome-all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/qgis2web.css">
     
     <!-- ===== NEW SMART CAMPUS CSS ===== -->
@@ -27,7 +27,11 @@
         height: 100%;
         margin: 0;
         padding: 0;
-        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    .header, .footer {
+        flex-shrink: 0;
     }
     #map {
         width: 100% !important;
