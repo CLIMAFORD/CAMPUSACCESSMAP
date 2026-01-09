@@ -1,0 +1,257 @@
+/* ===== MOBILE RESPONSIVENESS ===== */
+@media (max-width: 1200px) {
+    .sidebar {
+        width: 280px;
+    }
+    
+    .leaflet-control-zoom,
+    .leaflet-control-locate,
+    .leaflet-control-measure,
+    .leaflet-control-search {
+        left: 300px !important;
+    }
+}
+
+@media (max-width: 992px) {
+    .container {
+        flex-direction: column;
+        height: calc(100vh - 100px);
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 250px;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        display: flex;
+        padding: 15px;
+    }
+    
+    .sidebar-section {
+        flex: 0 0 auto;
+        width: 250px;
+        margin-right: 20px;
+        margin-bottom: 0;
+        padding-right: 20px;
+        border-right: 1px solid #eee;
+        border-bottom: none;
+    }
+    
+    .sidebar-section:last-child {
+        margin-right: 0;
+        border-right: none;
+    }
+    
+    .header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+        text-align: center;
+    }
+    
+    .header-right {
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+    }
+    
+    .stats {
+        width: 100%;
+        justify-content: space-around;
+    }
+    
+    .leaflet-control-zoom,
+    .leaflet-control-locate,
+    .leaflet-control-measure,
+    .leaflet-control-search {
+        left: 20px !important;
+    }
+    
+    .leaflet-control-zoom {
+        top: calc(250px + 40px) !important;
+    }
+    
+    .leaflet-control-locate {
+        top: calc(250px + 80px) !important;
+    }
+    
+    .leaflet-control-measure {
+        top: calc(250px + 120px) !important;
+    }
+    
+    .leaflet-control-search {
+        top: calc(250px + 160px) !important;
+    }
+    
+    .issues-panel {
+        width: 300px;
+        right: 10px;
+        bottom: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-left h1 {
+        font-size: 1.3rem;
+    }
+    
+    .subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .stat-item {
+        font-size: 0.75rem;
+    }
+    
+    .stat-item span {
+        font-size: 1rem;
+    }
+    
+    .sidebar {
+        max-height: 200px;
+        padding: 12px;
+    }
+    
+    .sidebar-section {
+        width: 220px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+        padding: 0;
+    }
+    
+    #issue-form {
+        padding: 20px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions button {
+        width: 100%;
+    }
+    
+    .issues-panel {
+        width: 280px;
+        max-height: 300px;
+    }
+    
+    .footer-content {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .leaflet-control-zoom {
+        top: calc(200px + 40px) !important;
+        transform: scale(0.9);
+    }
+    
+    .leaflet-control-locate {
+        top: calc(200px + 75px) !important;
+        transform: scale(0.9);
+    }
+    
+    .leaflet-control-measure {
+        top: calc(200px + 110px) !important;
+        transform: scale(0.9);
+    }
+    
+    .leaflet-control-search {
+        top: calc(200px + 145px) !important;
+        transform: scale(0.9);
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        max-height: 180px;
+        padding: 10px;
+    }
+    
+    .sidebar-section {
+        width: 200px;
+        padding-right: 15px;
+        margin-right: 15px;
+    }
+    
+    .sidebar-section h3 {
+        font-size: 1rem;
+    }
+    
+    .btn-small {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+    
+    .location-options {
+        flex-direction: column;
+    }
+    
+    .issues-panel {
+        width: calc(100% - 20px);
+        right: 10px;
+        bottom: 10px;
+    }
+    
+    .leaflet-control-zoom,
+    .leaflet-control-locate,
+    .leaflet-control-measure,
+    .leaflet-control-search {
+        left: 10px !important;
+        transform: scale(0.85);
+        transform-origin: top left;
+    }
+    
+    .leaflet-control-zoom {
+        top: calc(180px + 40px) !important;
+    }
+    
+    .leaflet-control-locate {
+        top: calc(180px + 70px) !important;
+    }
+    
+    .leaflet-control-measure {
+        top: calc(180px + 100px) !important;
+    }
+    
+    .leaflet-control-search {
+        top: calc(180px + 130px) !important;
+    }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+    .container {
+        height: -webkit-fill-available;
+    }
+    
+    #map {
+        height: -webkit-fill-available;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .btn, .btn-small, .location-btn {
+        min-height: 44px;
+        padding: 12px;
+    }
+    
+    .filter-group label {
+        padding: 12px;
+        min-height: 44px;
+    }
+    
+    .leaflet-control a {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
