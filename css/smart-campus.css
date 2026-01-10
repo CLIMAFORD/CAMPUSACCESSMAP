@@ -1,0 +1,842 @@
+/* ============================================
+   Smart Campus Access Map - Main Stylesheet
+   ============================================ */
+
+:root {
+    --primary-color: #007bff;
+    --primary-dark: #0056b3;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --sidebar-width: 380px;
+    --navbar-height: 56px;
+    --transition: all 0.3s ease;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f5f5;
+}
+
+body {
+    overflow: hidden;
+}
+
+/* ============================================
+   Navbar
+   ============================================ */
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: var(--navbar-height);
+    padding: 0.5rem 1rem;
+    z-index: 1100;
+}
+
+.navbar-brand {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-brand i {
+    font-size: 1.5rem;
+}
+
+/* ============================================
+   Main Layout
+   ============================================ */
+
+.main-container {
+    display: flex;
+    height: calc(100vh - var(--navbar-height));
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+.map-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 10;
+}
+
+/* ============================================
+   Sidebar Right
+   ============================================ */
+
+.sidebar-right {
+    width: var(--sidebar-width);
+    height: 100%;
+    background: white;
+    border-left: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    transition: var(--transition);
+}
+
+.sidebar-tabs {
+    border-bottom: 1px solid #ddd;
+    padding: 0.5rem;
+    gap: 0.25rem;
+    background: #f9f9f9;
+    border-radius: 0;
+}
+
+.sidebar-tabs .nav-link {
+    border: none;
+    color: var(--secondary-color);
+    padding: 0.75rem 0.5rem;
+    font-size: 1.1rem;
+    transition: var(--transition);
+    position: relative;
+}
+
+.sidebar-tabs .nav-link:hover {
+    color: var(--primary-color);
+    background: #f0f0f0;
+}
+
+.sidebar-tabs .nav-link.active {
+    color: var(--primary-color);
+    border-bottom: 3px solid var(--primary-color);
+    background: white;
+}
+
+.sidebar-tabs .badge {
+    position: absolute;
+    top: 0;
+    right: 5px;
+    font-size: 0.65rem;
+}
+
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ============================================
+   Tab Pane Styles
+   ============================================ */
+
+.tab-pane {
+    padding: 0;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.tab-pane h6 {
+    color: var(--dark-color);
+    font-weight: 600;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem !important;
+}
+
+/* ============================================
+   Layer Tree (Original QGIS Layers)
+   ============================================ */
+
+.layer-tree {
+    padding: 0.5rem 0;
+}
+
+.layer-tree .leaflet-control-layers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.layer-tree label {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--transition);
+    user-select: none;
+}
+
+.layer-tree label:hover {
+    background: #f5f5f5;
+}
+
+.layer-tree input[type="checkbox"],
+.layer-tree input[type="radio"] {
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+.layer-tree img {
+    max-width: 24px;
+    height: auto;
+    margin-right: 0.5rem;
+}
+
+/* ============================================
+   Report Form
+   ============================================ */
+
+.report-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.report-form .form-label {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.report-form .form-control,
+.report-form .form-select {
+    border: 1px solid #ddd;
+    font-size: 0.9rem;
+    border-radius: 4px;
+}
+
+.report-form .form-control:focus,
+.report-form .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.report-form .btn-group {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.report-form .btn {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+    flex: 1;
+}
+
+.report-form .form-check {
+    padding: 0.5rem 0;
+}
+
+.report-form .form-check-label {
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.report-form button[type="submit"] {
+    margin-top: 1rem;
+    font-weight: 600;
+    padding: 0.6rem 1rem;
+    background: var(--primary-color);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.report-form button[type="submit"]:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   Issues List
+   ============================================ */
+
+.issues-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.issue-card {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 0.75rem;
+    background: white;
+    transition: var(--transition);
+    cursor: pointer;
+    border-left: 4px solid var(--secondary-color);
+}
+
+.issue-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateX(4px);
+}
+
+.issue-card.severity-high {
+    border-left-color: var(--danger-color);
+    background: #fff5f5;
+}
+
+.issue-card.severity-medium {
+    border-left-color: var(--warning-color);
+    background: #fffbf0;
+}
+
+.issue-card.severity-low {
+    border-left-color: var(--success-color);
+    background: #f5fff5;
+}
+
+.issue-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.issue-card-title {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.issue-card-status {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.issue-card-status.pending {
+    background: #ffeaa7;
+    color: #d63031;
+}
+
+.issue-card-status.in-progress {
+    background: #74b9ff;
+    color: #0050b3;
+}
+
+.issue-card-status.resolved {
+    background: #55efc4;
+    color: #00b894;
+}
+
+.issue-card-meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin: 0.25rem 0;
+}
+
+.issue-card-description {
+    font-size: 0.85rem;
+    color: #555;
+    margin: 0.5rem 0 0 0;
+    line-height: 1.4;
+}
+
+.issue-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.issue-card-actions button {
+    flex: 1;
+    padding: 0.35rem;
+    font-size: 0.75rem;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.issue-card-actions .btn-view {
+    background: var(--primary-color);
+    color: white;
+}
+
+.issue-card-actions .btn-view:hover {
+    background: var(--primary-dark);
+}
+
+.issue-card-actions .btn-update {
+    background: var(--warning-color);
+    color: white;
+}
+
+.issue-card-actions .btn-update:hover {
+    background: #e0a800;
+}
+
+.issue-card-actions .btn-resolve {
+    background: var(--success-color);
+    color: white;
+}
+
+.issue-card-actions .btn-resolve:hover {
+    background: #218838;
+}
+
+.issue-card-actions .btn-delete {
+    background: #6c757d;
+    color: white;
+}
+
+.issue-card-actions .btn-delete:hover {
+    background: #5a6268;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #999;
+}
+
+.empty-state i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+/* ============================================
+   Analytics Dashboard
+   ============================================ */
+
+.analytics-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    border-radius: 6px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.chart-section {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 1rem;
+}
+
+.chart-section h6 {
+    font-size: 0.9rem;
+    color: var(--dark-color);
+    margin-bottom: 0.75rem;
+    border: none;
+    padding: 0;
+}
+
+.simple-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.chart-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-label {
+    width: 80px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #555;
+    flex-shrink: 0;
+}
+
+.chart-bar-fill {
+    flex: 1;
+    height: 24px;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+    border-radius: 3px;
+    position: relative;
+}
+
+.chart-bar-value {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+    padding: 0 0.25rem;
+}
+
+/* ============================================
+   Floating Action Button
+   ============================================ */
+
+.fab {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: var(--transition);
+    z-index: 500;
+}
+
+.fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.fab:active {
+    transform: scale(0.95);
+}
+
+.fab-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.fab-primary:hover {
+    background: var(--primary-dark);
+}
+
+/* ============================================
+   Toast Notifications
+   ============================================ */
+
+.toast-container {
+    z-index: 1200;
+}
+
+.toast {
+    border: none;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.toast.success {
+    background: var(--success-color);
+    color: white;
+}
+
+.toast.warning {
+    background: var(--warning-color);
+    color: white;
+}
+
+.toast.danger {
+    background: var(--danger-color);
+    color: white;
+}
+
+.toast.info {
+    background: var(--primary-color);
+    color: white;
+}
+
+.toast-body {
+    padding: 1rem;
+    font-weight: 500;
+}
+
+/* ============================================
+   Offcanvas Sidebar (Mobile)
+   ============================================ */
+
+.offcanvas {
+    width: 75% !important;
+    max-width: 300px;
+}
+
+.offcanvas-header {
+    background: var(--dark-color);
+    color: white;
+}
+
+.offcanvas-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+.offcanvas-body .list-group-item {
+    border: none;
+    padding: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.offcanvas-body .list-group-item:hover {
+    background: var(--light-color);
+    padding-left: 1.5rem;
+}
+
+.offcanvas-body .list-group-item a {
+    color: var(--dark-color);
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: 320px;
+    }
+    
+    .sidebar-right {
+        width: var(--sidebar-width);
+        position: absolute;
+        right: 0;
+        height: calc(100% - 10px);
+        margin: 5px;
+        border-radius: 6px;
+        box-shadow: -4px 0 16px rgba(0, 0, 0, 0.2);
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --navbar-height: 52px;
+    }
+    
+    .navbar-brand {
+        font-size: 1rem;
+    }
+    
+    .sidebar-right {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        right: -100%;
+        top: var(--navbar-height);
+        margin: 0;
+        border-radius: 0;
+        border-left: none;
+        border-top: 1px solid #ddd;
+        z-index: 999;
+        transition: right 0.3s ease;
+    }
+    
+    .sidebar-right.show {
+        right: 0;
+    }
+    
+    .sidebar-tabs {
+        flex-direction: row;
+    }
+    
+    .sidebar-tabs .nav-link {
+        flex: 1;
+        text-align: center;
+    }
+    
+    .fab {
+        bottom: 1.5rem;
+        right: 1.5rem;
+        width: 48px;
+        height: 48px;
+        font-size: 1.25rem;
+    }
+    
+    .analytics-container {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .stat-card {
+        padding: 0.75rem;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --navbar-height: 48px;
+    }
+    
+    .navbar {
+        padding: 0.35rem 0.5rem;
+    }
+    
+    .navbar-brand {
+        font-size: 0.9rem;
+    }
+    
+    .navbar-brand i {
+        font-size: 1.2rem;
+    }
+    
+    .offcanvas {
+        width: 100% !important;
+        max-width: none;
+    }
+    
+    .fab {
+        bottom: 1rem;
+        right: 1rem;
+        width: 44px;
+        height: 44px;
+    }
+    
+    .issue-card {
+        padding: 0.5rem;
+    }
+    
+    .issue-card-title {
+        font-size: 0.85rem;
+    }
+    
+    .issue-card-actions {
+        flex-wrap: wrap;
+    }
+    
+    .issue-card-actions button {
+        flex: 0 0 48%;
+    }
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+    .navbar,
+    .sidebar-right,
+    .fab,
+    .leaflet-control {
+        display: none !important;
+    }
+    
+    .map-container {
+        width: 100%;
+        height: 100%;
+    }
+}
+
+/* ============================================
+   Accessibility
+   ============================================ */
+
+.btn:focus,
+.form-control:focus,
+.form-select:focus,
+.nav-link:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ============================================
+   Animation Utilities
+   ============================================ */
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
