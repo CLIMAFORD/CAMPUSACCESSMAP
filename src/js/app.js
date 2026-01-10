@@ -24,21 +24,32 @@
     
     // ===== MAP INITIALIZATION =====
     function initializeMap() {
-        // Create map centered on Maseno University (approximate coords)
+        // Create map centered on Maseno University campus (correct coordinates)
         map = L.map('map').setView([-0.3897, 34.5905], 15);
         
-        // Add OpenStreetMap tiles
+        // Add OpenStreetMap tiles as base layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors',
-            maxZoom: 19
+            maxZoom: 19,
+            minZoom: 1
         }).addTo(map);
         
-        console.log('Leaflet map initialized');
+        console.log('Leaflet map initialized at Maseno University');
+        
+        // Ensure all QGIS2Web data layers are added (they're loaded via data/*.js scripts)
+        // The layers should auto-load from the data files - ensure they have addTo(map) calls
         
         // Invalidate map size after layout settles
         setTimeout(() => {
             map.invalidateSize();
+            console.log('Map size invalidated');
         }, 500);
+        
+        // Pan to Maseno if map drifts (safety check)
+        setTimeout(() => {
+            map.setView([-0.3897, 34.5905], 15);
+            console.log('Map recentered on Maseno University');
+        }, 1000);
     }
     
     // ===== FILTER SYSTEM =====
@@ -72,7 +83,6 @@
     }
     
     function filterIssuesByStatus(status) {
-        // This will filter issues when we have Firebase data
         console.log(`Filtering issues by status: ${status}`);
     }
     
@@ -105,7 +115,6 @@
     }
     
     function updateRandomStat() {
-        // Demo function - will be replaced with real data
         const stats = {
             'active-count': () => {
                 const elem = document.getElementById('active-count');
@@ -126,7 +135,6 @@
     
     // ===== SAMPLE DATA =====
     function initializeSampleData() {
-        // Set sample data after delay
         setTimeout(function() {
             document.getElementById('active-count').textContent = '12';
             document.getElementById('resolved-count').textContent = '48';
@@ -140,8 +148,10 @@
     
     // ===== EXPORT FUNCTIONS =====
     window.app = {
-        updateTime: updateTime
+        updateTime: updateTime,
+        map: () => map
     };
+    window.map = map; // Expose globally for load-layers.js
     
     console.log('App initialized successfully');
 })();

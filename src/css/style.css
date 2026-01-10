@@ -233,9 +233,10 @@ html, body {
 
 /* ===== MAIN CONTENT ===== */
 .main-content {
-    flex: 1;
     position: relative;
-    min-width: 0;
+    z-index: 10; /* Ensure map area is above sidebar */
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 /* ===== MODAL ===== */
@@ -605,4 +606,20 @@ html, body {
 
 .leaflet-control-layers {
     display: none !important;
+}
+
+#map {
+    z-index: 0;
+}
+
+.leaflet-container {
+    z-index: 0;
+}
+
+.leaflet-tile-pane {
+    z-index: 1 !important;
+}
+
+.leaflet-map-pane {
+    z-index: 2 !important;
 }
