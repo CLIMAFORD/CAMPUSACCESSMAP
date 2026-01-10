@@ -22,17 +22,8 @@
     <link rel="stylesheet" href="css/qgis2web.css">
     <link rel="stylesheet" href="css/fontawesome-all.min.css">
     
-    <!-- Leaflet Heatmap Library for Traffic Visualization -->
-    <script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
-    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/smart-campus.css">
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-messaging.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-analytics.js"></script>
     
     <title>Smart Campus Access Map</title>
 </head>
@@ -406,6 +397,8 @@
     
     <!-- Leaflet JS -->
     <script src="js/leaflet.js"></script>
+    <!-- Leaflet Heatmap Library - MUST load after Leaflet.js -->
+    <script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
     <script src="js/L.Control.Layers.Tree.min.js"></script>
     <script src="js/L.Control.Locate.min.js"></script>
     <script src="js/leaflet.rotatedMarker.js"></script>
@@ -432,7 +425,13 @@
     <script src="data/CC_bldngs_11.js"></script>
     <script src="data/MasenoRoads_12.js"></script>
     
-    <!-- Firebase Configuration & Modules -->
+    <!-- Firebase SDK (with async for better performance) -->
+    <script async src="https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js"></script>
+    <script async src="https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore.js"></script>
+    <script async src="https://www.gstatic.com/firebasejs/10.7.2/firebase-messaging.js"></script>
+    <script async src="https://www.gstatic.com/firebasejs/10.7.2/firebase-analytics.js"></script>
+    
+    <!-- Firebase Configuration & Custom Modules -->
     <script src="firebase-config.js"></script>
     <script src="js/firebase-sync.js"></script>
     <script src="js/firebase-notifications.js"></script>
@@ -619,14 +618,14 @@
             return {
                 pane: 'pane_MasenoTown_1',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(200, 60, 56, 1.0)',
                 dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 2.0, 
                 fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(196,60,57,1.0)',
+                fillOpacity: 0.8,
+                fillColor: 'rgba(220, 100, 90, 1.0)',
                 interactive: true,
             }
         }
@@ -683,14 +682,14 @@
             return {
                 pane: 'pane_Forest_2',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(76, 110, 56, 1.0)',
                 dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 2.0, 
                 fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(133,182,111,1.0)',
+                fillOpacity: 0.75,
+                fillColor: 'rgba(110, 160, 75, 1.0)',
                 interactive: true,
             }
         }
@@ -738,14 +737,14 @@
             return {
                 pane: 'pane_Maseno_University_3',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(88, 130, 50, 1.0)',
                 dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 2.0, 
                 fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(164,214,83,1.0)',
+                fillOpacity: 0.8,
+                fillColor: 'rgba(150, 190, 90, 1.0)',
                 interactive: true,
             }
         }
@@ -790,14 +789,14 @@
             return {
                 pane: 'pane_Forests_4',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(200, 120, 20, 1.0)',
                 dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 2.0, 
                 fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(255,158,23,1.0)',
+                fillOpacity: 0.75,
+                fillColor: 'rgba(240, 160, 40, 1.0)',
                 interactive: true,
             }
         }
@@ -842,14 +841,14 @@
             return {
                 pane: 'pane_Fields_5',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(180, 100, 120, 1.0)',
                 dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 2.0, 
                 fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(243,166,178,1.0)',
+                fillOpacity: 0.75,
+                fillColor: 'rgba(220, 140, 160, 1.0)',
                 interactive: true,
             }
         }
@@ -894,14 +893,14 @@
             return {
                 pane: 'pane_Niles_6',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(160, 50, 100, 1.0)',
                 dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 2.0, 
                 fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(225,89,137,1.0)',
+                fillOpacity: 0.8,
+                fillColor: 'rgba(210, 90, 140, 1.0)',
                 interactive: true,
             }
         }
@@ -946,14 +945,14 @@
             return {
                 pane: 'pane_College_Campus_7',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(160, 140, 40, 1.0)',
                 dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 2.0, 
                 fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(213,180,60,1.0)',
+                fillOpacity: 0.75,
+                fillColor: 'rgba(220, 190, 70, 1.0)',
                 interactive: true,
             }
         }
@@ -1001,14 +1000,14 @@
             return {
                 pane: 'pane_Siriba_8',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(100, 50, 120, 1.0)',
                 dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 2.0, 
                 fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(141,90,153,1.0)',
+                fillOpacity: 0.8,
+                fillColor: 'rgba(160, 100, 170, 1.0)',
                 interactive: true,
             }
         }
@@ -1164,14 +1163,14 @@
             return {
                 pane: 'pane_Niles_bldngs_9',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(140, 130, 100, 1.0)',
                 dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 2.0, 
                 fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(190,178,151,1.0)',
+                fillOpacity: 0.8,
+                fillColor: 'rgba(200, 185, 150, 1.0)',
                 interactive: true,
             }
         }
@@ -1327,14 +1326,14 @@
             return {
                 pane: 'pane_Siriba_bldngs_10',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(180, 50, 45, 1.0)',
                 dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 2.0, 
                 fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(196,60,57,1.0)',
+                fillOpacity: 0.8,
+                fillColor: 'rgba(220, 80, 70, 1.0)',
                 interactive: true,
             }
         }
@@ -1490,14 +1489,14 @@
             return {
                 pane: 'pane_CC_bldngs_11',
                 opacity: 1,
-                color: 'rgba(35,35,35,1.0)',
+                color: 'rgba(110, 70, 130, 1.0)',
                 dashArray: '',
-                lineCap: 'butt',
-                lineJoin: 'miter',
-                weight: 1.0, 
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 2.0, 
                 fill: true,
-                fillOpacity: 1,
-                fillColor: 'rgba(141,90,153,1.0)',
+                fillOpacity: 0.8,
+                fillColor: 'rgba(160, 110, 180, 1.0)',
                 interactive: true,
             }
         }
@@ -1641,11 +1640,11 @@
             return {
                 pane: 'pane_MasenoRoads_12',
                 opacity: 1,
-                color: 'rgba(30,41,25,1.0)',
+                color: 'rgba(80, 110, 50, 1.0)',
                 dashArray: '',
-                lineCap: 'square',
-                lineJoin: 'bevel',
-                weight: 4.0,
+                lineCap: 'round',
+                lineJoin: 'round',
+                weight: 5.0,
                 fillOpacity: 0,
                 interactive: true,
             }

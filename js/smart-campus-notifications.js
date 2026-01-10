@@ -59,3 +59,6 @@ const NotificationManager = (() => {
         info
     };
 })();
+
+// Create global alias for backward compatibility
+window.SmartCampusNotifications = NotificationManager;
