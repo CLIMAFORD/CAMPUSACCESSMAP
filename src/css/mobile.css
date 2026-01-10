@@ -1,3 +1,4 @@
+@import url("./emergency-fix.css");
 /* ===== MOBILE RESPONSIVENESS ===== */
 @media (max-width: 1200px) {
     .sidebar {
@@ -254,4 +255,32 @@
         min-width: 44px;
         min-height: 44px;
     }
+}
+
+/* ===== FIX: ensure map and basemap tiles are visible ===== */
+html, body {
+    height: 100%;
+    margin: 0; /* ensure no default page margin collapses layout */
+}
+
+.container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* make map visibly occupy space while debugging and ensure flex behavior */
+#map,
+.leaflet-container {
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 400px !important; /* temporary debug height */
+    height: 100% !important;
+    position: relative;
+    z-index: 1;
+}
+
+/* keep leaflet tile panes on top of other page elements */
+.leaflet-container .leaflet-tile-pane,
+.leaflet-container .leaflet-map-pane {
+    z-index: 1;
 }
