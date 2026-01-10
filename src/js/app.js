@@ -4,8 +4,13 @@
 (function() {
     'use strict';
     
+    let map; // Global map reference
+    
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Smart Campus App Initialized');
+        
+        // Initialize map FIRST
+        initializeMap();
         
         // Initialize components
         initializeFilters();
@@ -16,6 +21,25 @@
         updateTime();
         setInterval(updateTime, 60000); // Update every minute
     });
+    
+    // ===== MAP INITIALIZATION =====
+    function initializeMap() {
+        // Create map centered on Maseno University (approximate coords)
+        map = L.map('map').setView([-0.3897, 34.5905], 15);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+        
+        console.log('Leaflet map initialized');
+        
+        // Invalidate map size after layout settles
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 500);
+    }
     
     // ===== FILTER SYSTEM =====
     function initializeFilters() {
