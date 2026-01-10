@@ -14,13 +14,18 @@
  * 7. Update security rules in Firebase Console
  */
 
+// IMPORTANT: Do NOT commit real credentials. This file should be replaced
+// with a local, untracked file containing your real Firebase config.
+// Use `firebase-config.example.js` as a template and store the real
+// credentials in a file named `firebase-config.js` which is ignored by git.
+
 const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyBVBL7IBMy0QVdD-E3jKPIMXWYHQHJPGYY",
-    authDomain: "smart-campus-access-map.firebaseapp.com",
-    projectId: "smart-campus-access-map",
-    storageBucket: "smart-campus-access-map.firebasestorage.app",
-    messagingSenderId: "982905245198",
-    appId: "1:982905245198:web:42b6cdb809adb547f9365f"
+    apiKey: "REPLACE_WITH_YOUR_API_KEY",
+    authDomain: "REPLACE_WITH_YOUR_AUTH_DOMAIN",
+    projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
+    storageBucket: "REPLACE_WITH_YOUR_STORAGE_BUCKET",
+    messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
+    appId: "REPLACE_WITH_YOUR_APP_ID"
 };
 
 /**
@@ -38,4 +43,6 @@ function validateFirebaseConfig() {
 }
 
 // Auto-validate on load
-const FIREBASE_ENABLED = validateFirebaseConfig();
+// For safety, treat Firebase as disabled until a valid config is provided
+// by a local, untracked `firebase-config.js` with real credentials.
+const FIREBASE_ENABLED = false;
