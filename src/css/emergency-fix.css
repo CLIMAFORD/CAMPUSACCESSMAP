@@ -1,0 +1,89 @@
+/* EMERGENCY FIX - MAP VISIBILITY */
+/* Add this file to your index.html after other CSS files */
+
+/* 1. RESET EVERYTHING */
+html, body {
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+}
+
+/* 2. FIX HEADER */
+.header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 70px !important;
+    z-index: 1000 !important;
+    background: #2c7bb6 !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 20px !important;
+}
+
+/* 3. FIX CONTAINER */
+.container {
+    position: fixed !important;
+    top: 70px !important; /* Below header */
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 50px !important; /* Above footer */
+    display: flex !important;
+    width: 100% !important;
+    height: calc(100vh - 120px) !important; /* 70px header + 50px footer */
+}
+
+/* 4. FIX SIDEBAR */
+.sidebar {
+    width: 300px !important;
+    height: 100% !important;
+    background: white !important;
+    border-right: 1px solid #ccc !important;
+    overflow-y: auto !important;
+    flex-shrink: 0 !important;
+}
+
+/* 5. FIX MAIN CONTENT (MAP CONTAINER) */
+.main-content {
+    flex: 1 !important;
+    position: relative !important;
+    height: 100% !important;
+    min-width: 0 !important; /* CRITICAL for flexbox */
+}
+
+/* 6. FIX MAP ELEMENT */
+#map {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: #f0f0f0 !important; /* Fallback color */
+    z-index: 1 !important;
+}
+
+/* 7. FIX FOOTER */
+.footer {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 50px !important;
+    background: #343a40 !important;
+    color: white !important;
+    z-index: 1000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 8. DEBUG BORDERS - REMOVE AFTER MAP WORKS */
+#map { border: 5px solid red !important; }
+.main-content { border: 3px solid green !important; }
+.container { border: 2px solid blue !important; }

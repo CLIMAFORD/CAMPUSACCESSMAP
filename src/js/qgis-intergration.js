@@ -1,91 +1,93 @@
-// src/js/qgis-integration.js - UPDATED VERSION
+// src/js/qgis-integration.js - MINIMAL WORKING VERSION
 (function() {
     'use strict';
     
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('Initializing Smart Campus Map...');
+        console.log('🚀 DEBUG: Starting map initialization...');
         
-        // Suppress Leaflet deprecation warnings (temporarily)
-        L.Wixin = L.Wixin || {};
-        L.Wixin.Events = L.Evented;
+        // 1. CHECK MAP ELEMENT
+        var mapElement = document.getElementById('map');
+        if (!mapElement) {
+            console.error('❌ CRITICAL: #map element not found!');
+            return;
+        }
+        console.log('✅ Found #map element');
+        console.log('📏 Map element dimensions:', mapElement.offsetWidth, 'x', mapElement.offsetHeight);
         
+        // 2. CHECK LEAFLET
+        if (typeof L === 'undefined') {
+            console.error('❌ CRITICAL: Leaflet not loaded!');
+            return;
+        }
+        console.log('✅ Leaflet loaded, version:', L.version);
+        
+        // 3. CREATE MAP
         try {
-            // ===== MAP INITIALIZATION =====
             var map = L.map('map', {
-                zoomControl: false,
+                zoomControl: true,
                 maxZoom: 28,
-                minZoom: 1
-            }).setView([-0.005185737932566764, 34.6017462701612], 15);
+                minZoom: 1,
+                center: [-0.005185737932566764, 34.6017462701612],
+                zoom: 15
+            });
             
-            var hash = new L.Hash(map);
-            map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a>');
+            console.log('✅ Map object created');
             
-            // ===== BASE LAYER =====
+            // 4. ADD BASEMAP
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors',
                 maxZoom: 19
             }).addTo(map);
             
-            // ===== LOAD QGIS2WEB DATA LAYERS =====
-            // This is where your original QGIS2WEB code should go
-            // Copy from your original index.html starting at line 10
+            console.log('✅ OSM basemap added');
             
-            // IMPORTANT: You need to copy your original QGIS2WEB JavaScript code here
-            // Starting from: var highlightLayer;
-            // Ending before: </script>
+            // 5. ADD MARKER
+            L.marker([-0.005185737932566764, 34.6017462701612])
+                .addTo(map)
+                .bindPopup('<b>Maseno University</b><br>Test marker - map is working!')
+                .openPopup();
             
-            // ===== SAMPLE DATA - TEMPORARY =====
-            console.log('Loading sample data layers...');
+            console.log('✅ Test marker added');
             
-            // Example layer - replace with your actual data
-            var sampleLayer = L.geoJSON({
-                type: 'FeatureCollection',
-                features: [{
-                    type: 'Feature',
-                    geometry: {
-                        type: 'Point',
-                        coordinates: [34.6017462701612, -0.005185737932566764]
-                    },
-                    properties: {
-                        name: 'Maseno University',
-                        description: 'Main Campus'
-                    }
-                }]
-            }).addTo(map);
-            
-            // ===== MAP CONTROLS =====
-            L.control.zoom({position: 'topleft'}).addTo(map);
-            
-            // Locate control
-            if (typeof L.Control.Locate !== 'undefined') {
-                L.control.locate({position: 'topleft'}).addTo(map);
-            }
-            
-            // Measure control
-            if (typeof L.Control.Measure !== 'undefined') {
-                var measureControl = new L.Control.Measure({
-                    position: 'topleft',
-                    primaryLengthUnit: 'meters',
-                    secondaryLengthUnit: 'kilometers'
-                });
-                measureControl.addTo(map);
-            }
-            
-            // ===== MAKE MAP RESPONSIVE =====
-            function resizeMap() {
+            // 6. FIX RESIZING
+            function fixMapSize() {
+                console.log('🔄 Fixing map size...');
                 map.invalidateSize();
+                
+                // Force resize
+                setTimeout(function() {
+                    map.invalidateSize();
+                    console.log('✅ Map size fixed');
+                }, 100);
             }
             
-            setTimeout(resizeMap, 100);
-            window.addEventListener('resize', resizeMap);
+            // Initial fix
+            setTimeout(fixMapSize, 500);
             
-            // ===== MAKE MAP AVAILABLE GLOBALLY =====
+            // Fix on window resize
+            window.addEventListener('resize', fixMapSize);
+            
+            // 7. EXPORT FOR OTHER SCRIPTS
             window.campusMap = map;
             
-            console.log('✓ Smart Campus Map Initialized Successfully');
+            console.log('🎉 MAP INITIALIZATION COMPLETE!');
             
-        } catch(err) {
-            console.error('Map initialization error:', err);
+            // 8. DEBUG: Check every second if map is visible
+            var debugInterval = setInterval(function() {
+                console.log('🔍 DEBUG - Map dimensions:', 
+                    'width:', mapElement.offsetWidth, 
+                    'height:', mapElement.offsetHeight,
+                    'visible:', mapElement.offsetWidth > 0 && mapElement.offsetHeight > 0
+                );
+                
+                if (mapElement.offsetWidth > 0 && mapElement.offsetHeight > 0) {
+                    console.log('✅ Map is visible!');
+                    clearInterval(debugInterval);
+                }
+            }, 1000);
+            
+        } catch (error) {
+            console.error('❌ Map creation failed:', error);
         }
     });
 })();
