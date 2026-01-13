@@ -21,6 +21,7 @@ const GoogleDirections = (() => {
 
     /**
      * Convert place name to coordinates using Google Geocoding API
+     * Falls back to local campus database if API fails
      */
     async function geocodePlace(placeQuery) {
         // Check cache first
@@ -28,6 +29,41 @@ const GoogleDirections = (() => {
             return geocodeCache[placeQuery];
         }
 
+        // First try: Check if it's already coordinates (lat, lon format)
+        const coordMatch = placeQuery.match(/^([-\d.]+)\s*,\s*([-\d.]+)$/);
+        if (coordMatch) {
+            const location = {
+                lat: parseFloat(coordMatch[1]),
+                lng: parseFloat(coordMatch[2]),
+                placeName: placeQuery,
+                placeId: null
+            };
+            geocodeCache[placeQuery] = location;
+            return location;
+        }
+
+        // Second try: Check local campus database first
+        if (typeof Directions !== 'undefined' && Directions.getCampusLocations) {
+            const locations = Directions.getCampusLocations();
+            const lowerQuery = placeQuery.toLowerCase();
+            
+            for (const loc of locations) {
+                if (loc.name.toLowerCase().includes(lowerQuery) || 
+                    loc.building.toLowerCase().includes(lowerQuery)) {
+                    const location = {
+                        lat: loc.lat,
+                        lng: loc.lon,
+                        placeName: loc.name,
+                        placeId: null
+                    };
+                    geocodeCache[placeQuery] = location;
+                    console.log(`📍 Found in campus database: ${placeQuery} → ${loc.name}`);
+                    return location;
+                }
+            }
+        }
+
+        // Third try: Use Google Geocoding API (may fail if rate limited)
         try {
             // Build URL for Google Geocoding API
             const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(placeQuery)}&bounds=${SEARCH_BOUNDS.south},${SEARCH_BOUNDS.west}|${SEARCH_BOUNDS.north},${SEARCH_BOUNDS.east}&key=${GOOGLE_MAPS_API_KEY}`;
@@ -46,16 +82,21 @@ const GoogleDirections = (() => {
 
                 // Cache result
                 geocodeCache[placeQuery] = location;
+                console.log(`🗺️ Geocoded via Google Maps: ${placeQuery}`);
                 return location;
             } else if (data.status === 'ZERO_RESULTS') {
-                console.warn(`No results found for: ${placeQuery}`);
+                console.warn(`No results found for: ${placeQuery}. Try: "Main Gate" or "lat, lon"`);
+                return null;
+            } else if (data.status === 'REQUEST_DENIED' || data.status === 'OVER_QUERY_LIMIT') {
+                console.warn(`Google Maps API error (${data.status}). Using local campus database. Try searching campus location names like "Main Gate" or enter coordinates.`);
                 return null;
             } else {
                 console.error(`Geocoding error: ${data.status}`);
                 return null;
             }
         } catch (error) {
-            console.error('Geocoding fetch error:', error);
+            console.warn('Geocoding fetch error (API may be rate limited):', error.message);
+            console.log('💡 Tip: Use campus location names like "Main Gate" or enter coordinates "lat,lon"');
             return null;
         }
     }

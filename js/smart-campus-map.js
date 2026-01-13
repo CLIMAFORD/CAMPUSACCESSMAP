@@ -128,6 +128,17 @@ const MapManager = (() => {
     };
 
     const renderAllIssues = () => {
+        // Initialize issueLayer if it doesn't exist
+        if (!issueLayer && map) {
+            issueLayer = L.featureGroup();
+            map.addLayer(issueLayer);
+        }
+        
+        if (!issueLayer) {
+            console.warn('❌ Cannot render issues: map or issueLayer not initialized');
+            return;
+        }
+
         // Clear existing markers
         issueLayer.clearLayers();
         issueMarkers = {};

@@ -103,6 +103,12 @@ const LocationTracking = (() => {
     async function sendLocationToFirebase(location) {
         if (!FIREBASE_ENABLED || !HybridStorageManager) return;
 
+        // Check if Firebase is available
+        if (typeof firebase === 'undefined' || !firebase.firestore) {
+            console.warn('ℹ️ Firebase SDK not yet loaded, location not synced to cloud');
+            return;
+        }
+
         try {
             const db = firebase.firestore();
             const userId = location.userId;
@@ -130,7 +136,7 @@ const LocationTracking = (() => {
 
             console.log('📍 Location sent to Firebase');
         } catch (error) {
-            console.error('Error sending location to Firebase:', error);
+            console.warn('ℹ️ Could not sync location to Firebase:', error.message);
         }
     }
 
@@ -242,6 +248,12 @@ const LocationTracking = (() => {
     async function getHeatmapData(boundsLatLng) {
         if (!FIREBASE_ENABLED) return [];
 
+        // Check if Firebase is available
+        if (typeof firebase === 'undefined' || !firebase.firestore) {
+            console.warn('ℹ️ Firebase SDK not yet loaded, using local data only');
+            return [];
+        }
+
         try {
             const db = firebase.firestore();
             const locations = await db.collection('activeLocations').get();
@@ -266,7 +278,7 @@ const LocationTracking = (() => {
 
             return heatmapPoints;
         } catch (error) {
-            console.error('Error getting heatmap data:', error);
+            console.warn('ℹ️ Could not retrieve heatmap data:', error.message);
             return [];
         }
     }
@@ -276,6 +288,12 @@ const LocationTracking = (() => {
      */
     async function getPopularRoutes(timeRange = 24) {
         if (!FIREBASE_ENABLED) return [];
+
+        // Check if Firebase is available
+        if (typeof firebase === 'undefined' || !firebase.firestore) {
+            console.warn('ℹ️ Firebase SDK not yet loaded, traffic data not available');
+            return [];
+        }
 
         try {
             const db = firebase.firestore();
@@ -309,7 +327,7 @@ const LocationTracking = (() => {
                 .sort((a, b) => b.count - a.count)
                 .slice(0, 20); // Top 20 areas
         } catch (error) {
-            console.error('Error getting popular routes:', error);
+            console.warn('ℹ️ Could not retrieve popular routes:', error.message);
             return [];
         }
     }
