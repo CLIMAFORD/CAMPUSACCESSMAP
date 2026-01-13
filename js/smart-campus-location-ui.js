@@ -179,11 +179,13 @@ const LocationUI = (() => {
     }
 
     /**
-     * Get directions between two locations
+     * Get directions between two locations using Google Maps API
+     * Supports place name search and converts to coordinates automatically
      */
     async function getDirections() {
-        const fromInput = document.getElementById('fromLocation').value;
-        const toInput = document.getElementById('toLocation').value;
+        const fromInput = document.getElementById('fromLocation').value.trim();
+        const toInput = document.getElementById('toLocation').value.trim();
+        const transportMode = document.querySelector('input[name="transportMode"]:checked')?.value || 'walking';
         const wheelchairAccessible = document.getElementById('wheelchairAccessible').checked;
         const avoidCrowded = document.getElementById('avoidCrowded').checked;
 
@@ -193,35 +195,44 @@ const LocationUI = (() => {
         }
 
         try {
-            // Parse coordinates from input (format: "lat, lon")
-            const [fromLat, fromLon] = fromInput.split(',').map(v => parseFloat(v.trim()));
-            const [toLat, toLon] = toInput.split(',').map(v => parseFloat(v.trim()));
+            NotificationManager.warning('Calculating route...');
+            
+            // Get directions using Google Maps API
+            const directionsData = await GoogleDirections.getDirections(
+                fromInput,  // Can be place name or coordinates
+                toInput,    // Can be place name or coordinates
+                { 
+                    mode: transportMode,  // walking, driving, transit, bicycling
+                    wheelchair: wheelchairAccessible,
+                    avoidCrowded: avoidCrowded
+                }
+            );
 
-            if (isNaN(fromLat) || isNaN(fromLon) || isNaN(toLat) || isNaN(toLon)) {
-                NotificationManager.error('Invalid format. Please use: latitude, longitude');
-                return;
-            }
+            if (directionsData && directionsData.primary) {
+                // Store for use in card generation
+                window._alternativeRoutesData = directionsData;
+                
+                // Draw route on map
+                GoogleDirections.drawRouteOnMap(window.mapInstance, directionsData, {
+                    color: '#007bff',
+                    weight: 4
+                });
 
-            // Get route
-            const route = wheelchairAccessible ? 
-                await Directions.getAccessibleRoute(fromLat, fromLon, toLat, toLon) :
-                await Directions.getRoute(fromLat, fromLon, toLat, toLon, { avoidCrowded });
-
-            if (route) {
-                // Draw on map
-                Directions.drawRouteOnMap(window.mapInstance, route);
-
-                // Display route info
-                const routeCard = Directions.getRouteInfoCard(route);
+                // Display detailed route information
+                const routeCard = GoogleDirections.getRouteInfoCard(directionsData);
                 document.getElementById('routeInfo').innerHTML = routeCard;
 
-                NotificationManager.success(`Route: ${route.timeMinutes} min, ${(route.distance / 1000).toFixed(2)} km`);
+                // Show success notification with travel time
+                const primary = directionsData.primary;
+                NotificationManager.success(
+                    `📍 Route calculated: ${primary.distanceText} • ${primary.durationText} (${transportMode})`
+                );
             } else {
-                NotificationManager.warning('Could not calculate route. Try different locations.');
+                NotificationManager.warning('Could not calculate route. Try different locations or mode of transport.');
             }
         } catch (error) {
             console.error('Error getting directions:', error);
-            NotificationManager.error('Failed to calculate route. Please try again.');
+            NotificationManager.error(`Failed to calculate route: ${error.message}`);
         }
     }
 

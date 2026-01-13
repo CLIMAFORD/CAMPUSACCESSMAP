@@ -20,12 +20,13 @@
 // credentials in a file named `firebase-config.js` which is ignored by git.
 
 const FIREBASE_CONFIG = {
-    apiKey: "REPLACE_WITH_YOUR_API_KEY",
-    authDomain: "REPLACE_WITH_YOUR_AUTH_DOMAIN",
-    projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
-    storageBucket: "REPLACE_WITH_YOUR_STORAGE_BUCKET",
-    messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
-    appId: "REPLACE_WITH_YOUR_APP_ID"
+    apiKey: "AIzaSyBVBL7IBMy0QVdD-E3jKPIMXWYHQHJPGYY",
+    authDomain: "smart-campus-access-map.firebaseapp.com",
+    projectId: "smart-campus-access-map",
+    storageBucket: "smart-campus-access-map.firebasestorage.app",
+    messagingSenderId: "982905245198",
+    appId: "1:982905245198:web:42b6cdb809adb547f9365f",
+    measurementId: "G-2M9X7VKL69"
 };
 
 /**

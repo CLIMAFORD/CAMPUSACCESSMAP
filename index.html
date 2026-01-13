@@ -191,26 +191,7 @@
                                 <div class="stat-label">Pending</div>
                             </div>
                         </div>
-                        <!-- Export Data Section -->
-                        <div class="mt-4 p-3 bg-light rounded">
-                            <h6 class="mb-3"><i class="fas fa-download"></i> Export Data</h6>
-                            <div class="btn-group-vertical w-100" role="group">
-                                <button type="button" class="btn btn-sm btn-outline-primary text-start" id="exportExcelBtn" title="Download as Excel/CSV">
-                                    <i class="fas fa-file-excel"></i> Export to Excel
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-primary text-start mt-2" id="exportJsonBtn" title="Download as JSON">
-                                    <i class="fas fa-file-code"></i> Export to JSON
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-primary text-start mt-2" id="exportReportBtn" title="Generate HTML report">
-                                    <i class="fas fa-file-pdf"></i> Generate Report
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-primary text-start mt-2" id="exportAnalyticsBtn" title="Export analytics summary">
-                                    <i class="fas fa-chart-line"></i> Export Analytics
-                                </button>
-                            </div>
-                            <small class="d-block text-muted mt-2">Download all collected issue data for analysis and record-keeping</small>
-                        </div>
-
+                        <!-- Analytics Visualization Section (User Visible) -->
                         <div id="analyticsCharts" class="mt-4">
                             <div class="chart-section">
                                 <h6 class="mb-2">Issues by Type</h6>
@@ -224,6 +205,12 @@
                                 <h6 class="mb-2">Issues by Status</h6>
                                 <div id="statusChart" class="simple-chart"></div>
                             </div>
+                        </div>
+
+                        <!-- Data Export Restricted Notice -->
+                        <div class="mt-4 p-3 bg-warning bg-opacity-10 border border-warning rounded">
+                            <h6 class="mb-2 text-warning"><i class="fas fa-lock"></i> Data Export</h6>
+                            <small class="text-muted d-block">Detailed data exports are only available to administrators through the backend portal. Users can view all analytics visualizations and charts on this page.</small>
                         </div>
                     </div>
                 </div>
@@ -265,6 +252,33 @@
                             </div>
                             <div id="toLocationDropdown" class="list-group list-group-sm mb-2" style="display: none; position: absolute; width: 100%; z-index: 1000;"></div>
                             <small class="text-muted d-block">Select a campus building or location</small>
+                        </div>
+
+                        <!-- Transport Mode Selection -->
+                        <div class="mb-3">
+                            <label class="form-label form-label-sm">Mode of Transport</label>
+                            <div class="btn-group btn-group-sm w-100" role="group">
+                                <input type="radio" class="btn-check" name="transportMode" id="mode-walking" value="walking" checked>
+                                <label class="btn btn-outline-secondary" for="mode-walking">
+                                    <i class="fas fa-walking"></i> Walking
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="transportMode" id="mode-driving" value="driving">
+                                <label class="btn btn-outline-secondary" for="mode-driving">
+                                    <i class="fas fa-car"></i> Driving
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="transportMode" id="mode-bicycling" value="bicycling">
+                                <label class="btn btn-outline-secondary" for="mode-bicycling">
+                                    <i class="fas fa-bicycle"></i> Cycling
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="transportMode" id="mode-transit" value="transit">
+                                <label class="btn btn-outline-secondary" for="mode-transit">
+                                    <i class="fas fa-bus"></i> Transit
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-2">Select your preferred transportation mode</small>
                         </div>
 
                         <!-- Route Options -->
@@ -469,6 +483,7 @@
     
     <!-- New Location & Navigation Modules -->
     <script src="js/smart-campus-location-tracking.js"></script>
+    <script src="js/google-maps-directions.js"></script>
     <script src="js/smart-campus-directions.js"></script>
     <script src="js/smart-campus-heatmap.js"></script>
     <script src="js/smart-campus-location-ui.js"></script>
