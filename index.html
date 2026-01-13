@@ -191,6 +191,26 @@
                                 <div class="stat-label">Pending</div>
                             </div>
                         </div>
+                        <!-- Export Data Section -->
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6 class="mb-3"><i class="fas fa-download"></i> Export Data</h6>
+                            <div class="btn-group-vertical w-100" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary text-start" id="exportExcelBtn" title="Download as Excel/CSV">
+                                    <i class="fas fa-file-excel"></i> Export to Excel
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary text-start mt-2" id="exportJsonBtn" title="Download as JSON">
+                                    <i class="fas fa-file-code"></i> Export to JSON
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary text-start mt-2" id="exportReportBtn" title="Generate HTML report">
+                                    <i class="fas fa-file-pdf"></i> Generate Report
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary text-start mt-2" id="exportAnalyticsBtn" title="Export analytics summary">
+                                    <i class="fas fa-chart-line"></i> Export Analytics
+                                </button>
+                            </div>
+                            <small class="d-block text-muted mt-2">Download all collected issue data for analysis and record-keeping</small>
+                        </div>
+
                         <div id="analyticsCharts" class="mt-4">
                             <div class="chart-section">
                                 <h6 class="mb-2">Issues by Type</h6>
@@ -433,6 +453,7 @@
     
     <!-- Firebase Configuration & Custom Modules -->
     <script src="firebase-config.js"></script>
+    <script src="js/firebase-export.js"></script>
     <script src="js/firebase-sync.js"></script>
     <script src="js/firebase-notifications.js"></script>
     <script src="js/hybrid-storage.js"></script>

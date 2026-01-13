@@ -43,6 +43,5 @@ function validateFirebaseConfig() {
 }
 
 // Auto-validate on load
-// For safety, treat Firebase as disabled until a valid config is provided
-// by a local, untracked `firebase-config.js` with real credentials.
-const FIREBASE_ENABLED = false;
+// Firebase is enabled if config is valid (no placeholders)
+const FIREBASE_ENABLED = validateFirebaseConfig();

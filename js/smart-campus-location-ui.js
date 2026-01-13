@@ -188,11 +188,7 @@ const LocationUI = (() => {
         const avoidCrowded = document.getElementById('avoidCrowded').checked;
 
         if (!fromInput || !toInput) {
-            SmartCampusNotifications.show(
-                'Missing information',
-                'Please enter both starting point and destination.',
-                'warning'
-            );
+            NotificationManager.warning('Please enter both starting point and destination.');
             return;
         }
 
@@ -202,11 +198,7 @@ const LocationUI = (() => {
             const [toLat, toLon] = toInput.split(',').map(v => parseFloat(v.trim()));
 
             if (isNaN(fromLat) || isNaN(fromLon) || isNaN(toLat) || isNaN(toLon)) {
-                SmartCampusNotifications.show(
-                    'Invalid format',
-                    'Please use format: latitude, longitude',
-                    'error'
-                );
+                NotificationManager.error('Invalid format. Please use: latitude, longitude');
                 return;
             }
 
@@ -223,19 +215,13 @@ const LocationUI = (() => {
                 const routeCard = Directions.getRouteInfoCard(route);
                 document.getElementById('routeInfo').innerHTML = routeCard;
 
-                SmartCampusNotifications.show(
-                    'Route calculated',
-                    `${route.timeMinutes} minutes, ${(route.distance / 1000).toFixed(2)} km`,
-                    'success'
-                );
+                NotificationManager.success(`Route: ${route.timeMinutes} min, ${(route.distance / 1000).toFixed(2)} km`);
+            } else {
+                NotificationManager.warning('Could not calculate route. Try different locations.');
             }
         } catch (error) {
             console.error('Error getting directions:', error);
-            SmartCampusNotifications.show(
-                'Error',
-                'Failed to calculate route. Please try again.',
-                'error'
-            );
+            NotificationManager.error('Failed to calculate route. Please try again.');
         }
     }
 

@@ -25,44 +25,60 @@ const MapManager = (() => {
     };
 
     const addIssueMarker = (issue) => {
-        if (!map || !issue.latitude || !issue.longitude) return;
-
-        // Remove existing marker if present
-        if (issueMarkers[issue.id]) {
-            issueLayer.removeLayer(issueMarkers[issue.id]);
+        if (!map) {
+            console.warn('❌ Map not initialized. Marker not added for issue:', issue.id);
+            return null;
+        }
+        
+        if (!issue.latitude || !issue.longitude) {
+            console.warn('⚠️  Issue missing coordinates:', issue.id);
+            return null;
         }
 
-        const iconColor = getSeverityColor(issue.severity);
-        const iconHtml = `
-            <div class="issue-marker" style="background: ${iconColor}; border: 3px solid white;">
-                <i class="fas fa-exclamation-triangle" style="color: white;"></i>
-            </div>
-        `;
-
-        const marker = L.marker(
-            [issue.latitude, issue.longitude],
-            {
-                icon: L.divIcon({
-                    html: iconHtml,
-                    className: 'custom-issue-marker',
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 40],
-                    popupAnchor: [0, -40]
-                })
+        try {
+            // Remove existing marker if present
+            if (issueMarkers[issue.id]) {
+                issueLayer.removeLayer(issueMarkers[issue.id]);
             }
-        );
 
-        const popupContent = createIssuePopup(issue);
-        marker.bindPopup(popupContent);
-        marker.on('click', () => {
-            marker.openPopup();
-            updateSidebar('issues');
-        });
+            const iconColor = getSeverityColor(issue.severity);
+            const iconHtml = `
+                <div class="issue-marker" style="background: ${iconColor}; border: 3px solid white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-exclamation-triangle" style="color: white; font-size: 18px;"></i>
+                </div>
+            `;
 
-        issueLayer.addLayer(marker);
-        issueMarkers[issue.id] = marker;
+            const marker = L.marker(
+                [issue.latitude, issue.longitude],
+                {
+                    icon: L.divIcon({
+                        html: iconHtml,
+                        className: 'custom-issue-marker',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 40],
+                        popupAnchor: [0, -40]
+                    })
+                }
+            );
 
-        return marker;
+            const popupContent = createIssuePopup(issue);
+            marker.bindPopup(popupContent);
+            marker.on('click', () => {
+                marker.openPopup();
+                if (typeof updateSidebar === 'function') {
+                    updateSidebar('issues-tab');
+                }
+            });
+
+            issueLayer.addLayer(marker);
+            issueMarkers[issue.id] = marker;
+
+            console.log(`📍 Marker added for issue ${issue.id}`);
+            return marker;
+        } catch (error) {
+            console.error('Error adding issue marker:', error, issue);
+            return null;
+        }
     };
 
     const createIssuePopup = (issue) => {

@@ -68,10 +68,16 @@ const HybridStorageManager = (() => {
      */
     function getIssues() {
         try {
+            // Check if localStorage is available (fails in private/incognito mode)
+            if (typeof localStorage === 'undefined' || localStorage === null) {
+                console.warn('⚠️  localStorage not available. Using memory storage only.');
+                return [];
+            }
+            
             const data = localStorage.getItem(ISSUES_KEY);
             return data ? JSON.parse(data) : [];
         } catch (error) {
-            console.error('Error loading issues:', error);
+            console.warn('⚠️  localStorage access blocked (private mode?). Using memory storage only.', error);
             return [];
         }
     }
@@ -93,7 +99,12 @@ const HybridStorageManager = (() => {
             } else {
                 issues.push(issue);
             }
-            localStorage.setItem(ISSUES_KEY, JSON.stringify(issues));
+            
+            try {
+                localStorage.setItem(ISSUES_KEY, JSON.stringify(issues));
+            } catch (storageError) {
+                console.warn('⚠️  Could not save to localStorage (private mode?). Continuing with memory storage.', storageError);
+            }
             
             // Save to Firebase in background
             if (useFirebase) {

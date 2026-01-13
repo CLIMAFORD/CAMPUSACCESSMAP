@@ -23,10 +23,23 @@ const IssuesManager = (() => {
         };
 
         try {
-            StorageManager.saveIssue(issue);
-            MapManager.addIssueMarker(issue);
+            // Use HybridStorageManager if available, fall back to StorageManager
+            const storage = typeof HybridStorageManager !== 'undefined' ? HybridStorageManager : StorageManager;
+            storage.saveIssue(issue);
+            
+            // Add marker to map if MapManager is available
+            if (typeof MapManager !== 'undefined' && MapManager && MapManager.addIssueMarker) {
+                MapManager.addIssueMarker(issue);
+            } else {
+                console.warn('MapManager.addIssueMarker not available');
+            }
+            
             refreshIssuesList();
-            updateAnalytics();
+            
+            // Update analytics if available
+            if (typeof updateAnalytics === 'function') {
+                updateAnalytics();
+            }
             
             return {
                 success: true,
@@ -248,6 +261,11 @@ const IssuesManager = (() => {
         if (!issuesList) return;
 
         const issues = StorageManager.getIssues();
+        
+        // Render all issues on the map
+        if (typeof MapManager !== 'undefined' && MapManager && MapManager.renderAllIssues) {
+            MapManager.renderAllIssues();
+        }
         
         if (issues.length === 0) {
             issuesList.innerHTML = `

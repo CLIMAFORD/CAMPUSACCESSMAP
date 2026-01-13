@@ -26,7 +26,7 @@ const NotificationManager = (() => {
         
         const toast = new bootstrap.Toast(toastElement, {
             autohide: true,
-            delay: duration
+            delay: parseInt(duration) || 4000
         });
 
         toast.show();

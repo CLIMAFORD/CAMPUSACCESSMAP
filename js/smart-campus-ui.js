@@ -40,6 +40,27 @@ const UIManager = (() => {
             });
         }
 
+        // Export Data Buttons
+        const exportExcelBtn = document.getElementById('exportExcelBtn');
+        if (exportExcelBtn) {
+            exportExcelBtn.addEventListener('click', handleExportToExcel);
+        }
+
+        const exportJsonBtn = document.getElementById('exportJsonBtn');
+        if (exportJsonBtn) {
+            exportJsonBtn.addEventListener('click', handleExportToJSON);
+        }
+
+        const exportReportBtn = document.getElementById('exportReportBtn');
+        if (exportReportBtn) {
+            exportReportBtn.addEventListener('click', handleGenerateReport);
+        }
+
+        const exportAnalyticsBtn = document.getElementById('exportAnalyticsBtn');
+        if (exportAnalyticsBtn) {
+            exportAnalyticsBtn.addEventListener('click', handleExportAnalytics);
+        }
+
         // Issue Count Badge Update
         updateIssueCount();
     };
@@ -142,6 +163,91 @@ const UIManager = (() => {
             }).catch(() => {
                 NotificationManager.warning('Could not access your location. Please enter it manually.');
             });
+        }
+    };
+
+    const handleExportToExcel = async () => {
+        try {
+            const issues = StorageManager.getIssues();
+            if (!issues || issues.length === 0) {
+                NotificationManager.warning('No issues to export. Report some issues first!');
+                return;
+            }
+
+            const result = await DataExport.exportToExcel(issues);
+            if (result.success) {
+                NotificationManager.success(`✅ Exported ${result.count} issues to ${result.filename}`);
+            } else {
+                NotificationManager.error('Failed to export: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Export error:', error);
+            NotificationManager.error('Error exporting data: ' + error.message);
+        }
+    };
+
+    const handleExportToJSON = async () => {
+        try {
+            const issues = StorageManager.getIssues();
+            if (!issues || issues.length === 0) {
+                NotificationManager.warning('No issues to export. Report some issues first!');
+                return;
+            }
+
+            const result = await DataExport.exportToJSON(issues);
+            if (result.success) {
+                NotificationManager.success(`✅ Exported ${result.count} issues to ${result.filename}`);
+            } else {
+                NotificationManager.error('Failed to export: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Export error:', error);
+            NotificationManager.error('Error exporting data: ' + error.message);
+        }
+    };
+
+    const handleGenerateReport = async () => {
+        try {
+            const issues = StorageManager.getIssues();
+            if (!issues || issues.length === 0) {
+                NotificationManager.warning('No issues to report. Report some issues first!');
+                return;
+            }
+
+            const result = await DataExport.generateReport(issues, {
+                includeAnalytics: true,
+                format: 'html'
+            });
+
+            if (result.success) {
+                NotificationManager.success(`✅ Report generated: ${result.filename}`);
+            } else {
+                NotificationManager.error('Failed to generate report: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Report error:', error);
+            NotificationManager.error('Error generating report: ' + error.message);
+        }
+    };
+
+    const handleExportAnalytics = async () => {
+        try {
+            const issues = StorageManager.getIssues();
+            if (!issues || issues.length === 0) {
+                NotificationManager.warning('No data to analyze. Report some issues first!');
+                return;
+            }
+
+            const result = await DataExport.exportAnalyticsSummary(issues);
+            if (result.success) {
+                NotificationManager.success(`✅ Analytics exported to ${result.filename}`);
+                console.log('📊 Analytics Summary:', result.summary);
+            } else {
+                NotificationManager.error('Failed to export analytics: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Analytics export error:', error);
+            NotificationManager.error('Error exporting analytics: ' + error.message);
         }
     };
 
