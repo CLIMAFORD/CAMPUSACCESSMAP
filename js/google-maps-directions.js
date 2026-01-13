@@ -6,7 +6,7 @@
 
 const GoogleDirections = (() => {
     // Google Maps API Key - Add your API key here
-    const GOOGLE_MAPS_API_KEY = 'AIzaSyBVBL7IBMy0QVdD-E3jKPIMXWYHQHJPGYY';
+    const GOOGLE_MAPS_API_KEY = 'AIzaSyCvQzzpIPfsISFu0Lvln3q13MdiE8laKWI';
     
     // Cache for geocoding results
     const geocodeCache = {};
