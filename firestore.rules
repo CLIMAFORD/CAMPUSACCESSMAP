@@ -43,8 +43,8 @@ service cloud.firestore {
     
     // ===== ACTIVE LOCATIONS COLLECTION =====
     match /activeLocations/{userId} {
-      // Authenticated users can read active locations
-      allow read: if request.auth != null;
+      // Allow reads for heatmap analytics (including anonymous for public heatmap)
+      allow read: if true;
       
       // Users can write their own location or if admin
       allow write: if request.auth.uid == userId || isAdmin();
@@ -52,8 +52,8 @@ service cloud.firestore {
     
     // ===== LOCATION HISTORY COLLECTION =====
     match /locationHistory/{docId} {
-      // Authenticated users can read location history
-      allow read: if request.auth != null;
+      // Allow reads for heatmap and analytics (including anonymous for public heatmap)
+      allow read: if true;
       
       // Authenticated users can create
       allow create: if request.auth != null;
