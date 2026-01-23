@@ -11,12 +11,31 @@ const HybridStorageManager = (() => {
 
     let useFirebase = false;
     let isInitialized = false;
+    let storageAvailable = true;
+
+    /**
+     * Check if localStorage is available (handles Tracking Prevention)
+     */
+    function checkStorageAvailable() {
+        try {
+            const test = '__storage_test__';
+            localStorage.setItem(test, test);
+            localStorage.removeItem(test);
+            return true;
+        } catch (error) {
+            console.warn('⚠️  Local storage blocked (Tracking Prevention). Using memory cache only.');
+            return false;
+        }
+    }
 
     /**
      * Initialize hybrid storage
      */
     async function initialize() {
         console.log('📦 Initializing Hybrid Storage...');
+        
+        // Check if storage is available
+        storageAvailable = checkStorageAvailable();
         
         // Try to initialize Firebase
         if (FIREBASE_ENABLED) {
@@ -49,11 +68,22 @@ const HybridStorageManager = (() => {
         if (!useFirebase) return;
 
         // Listen for issue changes
-        FirebaseSync.startIssueSyncListener((issues) => {
-            localStorage.setItem(ISSUES_KEY, JSON.stringify(issues));
-            // Notify listeners
-            window.dispatchEvent(new CustomEvent('scam:issuesSync', { detail: { issues } }));
-        });
+        try {
+            if (storageAvailable) {
+                FirebaseSync.startIssueSyncListener((issues) => {
+                    localStorage.setItem(ISSUES_KEY, JSON.stringify(issues));
+                    // Notify listeners
+                    window.dispatchEvent(new CustomEvent('scam:issuesSync', { detail: { issues } }));
+                });
+            } else {
+                FirebaseSync.startIssueSyncListener((issues) => {
+                    // Just notify, don't store
+                    window.dispatchEvent(new CustomEvent('scam:issuesSync', { detail: { issues } }));
+                });
+            }
+        } catch (error) {
+            console.warn('⚠️  Storage sync unavailable:', error.message);
+        }
 
         // Listen for notifications
         FirebaseSync.startNotificationListener((notification) => {
@@ -68,16 +98,14 @@ const HybridStorageManager = (() => {
      */
     function getIssues() {
         try {
-            // Check if localStorage is available (fails in private/incognito mode)
-            if (typeof localStorage === 'undefined' || localStorage === null) {
-                console.warn('⚠️  localStorage not available. Using memory storage only.');
+            if (!storageAvailable) {
                 return [];
             }
             
             const data = localStorage.getItem(ISSUES_KEY);
             return data ? JSON.parse(data) : [];
         } catch (error) {
-            console.warn('⚠️  localStorage access blocked (private mode?). Using memory storage only.', error);
+            console.warn('⚠️  Storage access error. Using memory storage only.', error);
             return [];
         }
     }
