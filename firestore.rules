@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===== ISSUES COLLECTION =====
+    match /issues/{issueId} {
+      // Only authenticated users can read issues
+      allow read: if request.auth != null;
+      
+      // Only authenticated users can create new issues
+      allow create: if request.auth != null;
+      
+      // Only the creator or admin can update
+      allow update: if isAdmin() || request.auth.uid == resource.data.reportedBy;
+      
+      // Only admin can delete
+      allow delete: if isAdmin();
+    }
+    
+    // ===== USERS COLLECTION =====
+    match /users/{userId} {
+      // Only admin can read users data
+      allow read: if isAdmin();
+      
+      // Users can write their own data
+      allow write: if request.auth.uid == userId || isAdmin();
+    }
+    
+    // ===== NOTIFICATIONS COLLECTION =====
+    match /notifications/{notificationId} {
+      // Users can read their own notifications
+      allow read: if request.auth.uid == resource.data.userId || isAdmin();
+      
+      // System can create notifications
+      allow create: if request.resource.data.userId != null;
+      
+      // Users can update their own notifications
+      allow update: if request.auth.uid == resource.data.userId || isAdmin();
+      
+      // Users can delete their own notifications
+      allow delete: if request.auth.uid == resource.data.userId || isAdmin();
+    }
+    
+    // ===== ACTIVE LOCATIONS COLLECTION =====
+    match /activeLocations/{userId} {
+      // Authenticated users can read active locations
+      allow read: if request.auth != null;
+      
+      // Users can write their own location or if admin
+      allow write: if request.auth.uid == userId || isAdmin();
+    }
+    
+    // ===== LOCATION HISTORY COLLECTION =====
+    match /locationHistory/{docId} {
+      // Authenticated users can read location history
+      allow read: if request.auth != null;
+      
+      // Authenticated users can create
+      allow create: if request.auth != null;
+      
+      // Only admin can update
+      allow update: if isAdmin();
+      
+      // Only admin can delete
+      allow delete: if isAdmin();
+    }
+    
+    // ===== METADATA COLLECTION =====
+    match /_metadata/{document=**} {
+      // Authenticated users can read metadata
+      allow read: if request.auth != null;
+      
+      // Only admin can write
+      allow write: if isAdmin();
+    }
+    
+    // ===== HELPER FUNCTIONS =====
+    
+    // Check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+}

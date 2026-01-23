@@ -23,15 +23,15 @@ Stores campus accessibility and maintenance issue reports.
 **Document ID**: Auto-generated
 
 **Fields**:
-- `title` (string) - Issue title
-- `description` (string) - Detailed description
-- `category` (string) - Issue category (accessibility, maintenance, safety, etc.)
-- `latitude` (number) - Issue location latitude
-- `longitude` (number) - Issue location longitude
+- `er) - Issue location longitude
 - `status` (string) - Issue status: "open", "in-progress", "resolved"
 - `priority` (string) - Priority level: "low", "medium", "high", "critical"
 - `reportedBy` (string) - User ID who reported
-- `reportedAt` (timestamp) - When issue was reported
+- `reportedAt` (timestamp) - When title` (string) - Issue title
+- `description` (string) - Detailed description
+- `category` (string) - Issue category (accessibility, maintenance, safety, etc.)
+- `latitude` (number) - Issue location latitude
+- `longitude` (numbissue was reported
 - `updatedAt` (timestamp) - Last update time
 - `deleted` (boolean) - Soft delete flag (default: false)
 - `attachments` (array) - File references/URLs
