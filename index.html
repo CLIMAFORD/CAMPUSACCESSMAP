@@ -474,15 +474,12 @@
             if (typeof firebase !== 'undefined' && FIREBASE_ENABLED) {
                 try {
                     firebase.initializeApp(FIREBASE_CONFIG);
-                    
-                    // Enable anonymous authentication
-                    firebase.auth().signInAnonymously().catch(error => {
-                        console.warn('Firebase anonymous auth error:', error.message);
-                    });
-                    
                     console.log('✅ Firebase initialized successfully');
                 } catch (error) {
-                    console.warn('Firebase already initialized or init error:', error.message);
+                    // Firebase already initialized or init error
+                    if (error.code !== 'app/duplicate-app') {
+                        console.warn('Firebase initialization info:', error.message);
+                    }
                 }
             }
         });

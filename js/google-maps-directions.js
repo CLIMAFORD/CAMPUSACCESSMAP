@@ -95,7 +95,7 @@ const GoogleDirections = (() => {
                 return null;
             }
         } catch (error) {
-            console.warn('Geocoding fetch error (API may be rate limited):', error.message);
+            console.warn('Geocoding fetch error:', error.message);
             console.log('💡 Tip: Use campus location names like "Main Gate" or enter coordinates "lat,lon"');
             return null;
         }
@@ -138,6 +138,9 @@ const GoogleDirections = (() => {
                 return parseDirectionsResponse(data, mode);
             } else if (data.status === 'NOT_FOUND') {
                 throw new Error('Could not find route. Try different locations.');
+            } else if (data.status === 'REQUEST_DENIED') {
+                console.log('💡 Directions: Using campus location database. Supported locations: Main Gate, Library, Science Building, etc.');
+                throw new Error('Directions API unavailable. Try: Main Gate, Library, Science Building');
             } else {
                 throw new Error(`Directions error: ${data.status}`);
             }
