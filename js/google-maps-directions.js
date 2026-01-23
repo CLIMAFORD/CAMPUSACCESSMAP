@@ -104,6 +104,7 @@ const GoogleDirections = (() => {
     /**
      * Get directions using Google Maps Directions API
      * Returns road-following routes with proper turn-by-turn instructions
+     * Falls back to straight-line directions if API fails
      */
     async function getDirections(origin, destination, options = {}) {
         try {
@@ -130,24 +131,132 @@ const GoogleDirections = (() => {
             // Build URL for Google Directions API
             const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originCoords.lat},${originCoords.lng}&destination=${destCoords.lat},${destCoords.lng}&mode=${mode}&alternatives=true&key=${GOOGLE_MAPS_API_KEY}`;
 
-            const response = await fetch(url);
-            const data = await response.json();
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors'
+                });
 
-            if (data.status === 'OK' && data.routes.length > 0) {
-                // Return best route with all alternates
-                return parseDirectionsResponse(data, mode);
-            } else if (data.status === 'NOT_FOUND') {
-                throw new Error('Could not find route. Try different locations.');
-            } else if (data.status === 'REQUEST_DENIED') {
-                console.log('💡 Directions: Using campus location database. Supported locations: Main Gate, Library, Science Building, etc.');
-                throw new Error('Directions API unavailable. Try: Main Gate, Library, Science Building');
-            } else {
-                throw new Error(`Directions error: ${data.status}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.status === 'OK' && data.routes.length > 0) {
+                    // Return best route with all alternates
+                    return parseDirectionsResponse(data, mode);
+                } else if (data.status === 'NOT_FOUND') {
+                    throw new Error('Could not find route. Try different locations.');
+                } else if (data.status === 'REQUEST_DENIED' || data.status === 'INVALID_REQUEST') {
+                    console.warn('💡 Google Maps API unavailable. Using straight-line directions.');
+                    return generateStraightLineRoute(originCoords, destCoords, mode);
+                } else {
+                    throw new Error(`Directions error: ${data.status}`);
+                }
+            } catch (fetchError) {
+                // Network error or API unavailable - use fallback
+                console.warn('⚠️ Directions API network error:', fetchError.message);
+                console.log('📍 Using straight-line route as fallback');
+                return generateStraightLineRoute(originCoords, destCoords, mode);
             }
         } catch (error) {
-            console.error('Directions fetch error:', error);
+            console.error('Directions error:', error);
             throw error;
         }
+    }
+
+    /**
+     * Generate a straight-line route as fallback (great-circle distance)
+     */
+    function generateStraightLineRoute(origin, destination, mode) {
+        // Calculate distance using Haversine formula
+        const distance = calculateDistance(origin.lat, origin.lng, destination.lat, destination.lng);
+        
+        // Estimate duration based on mode and distance
+        let estimatedDuration = 0;
+        switch(mode) {
+            case 'walking':
+                estimatedDuration = (distance / 1.4) * 3600; // ~5 km/h = 1.4 m/s
+                break;
+            case 'bicycling':
+                estimatedDuration = (distance / 5) * 3600; // ~18 km/h = 5 m/s
+                break;
+            case 'driving':
+                estimatedDuration = (distance / 13.9) * 3600; // ~50 km/h = 13.9 m/s
+                break;
+            case 'transit':
+                estimatedDuration = (distance / 7) * 3600 + 300; // ~25 km/h + 5 min wait
+                break;
+            default:
+                estimatedDuration = (distance / 5) * 3600;
+        }
+
+        // Format distance and duration
+        const distanceKm = (distance / 1000).toFixed(1);
+        const distanceText = distanceKm + ' km';
+        const durationMinutes = Math.round(estimatedDuration / 60);
+        const durationHours = Math.floor(durationMinutes / 60);
+        const durationText = durationHours > 0 
+            ? `${durationHours} hour${durationHours > 1 ? 's' : ''} ${durationMinutes % 60} min`
+            : `${durationMinutes} min`;
+
+        // Create a simple polyline (straight line)
+        const polyline = [
+            { lat: origin.lat, lng: origin.lng },
+            { lat: destination.lat, lng: destination.lng }
+        ];
+
+        const route = {
+            primary: {
+                id: 0,
+                distance: distance,
+                distanceText: distanceText,
+                duration: Math.round(estimatedDuration),
+                durationText: durationText,
+                durationTraffic: Math.round(estimatedDuration),
+                durationTrafficText: durationText,
+                startLocation: { lat: origin.lat, lng: origin.lng },
+                endLocation: { lat: destination.lat, lng: destination.lng },
+                startAddress: 'Start Location',
+                endAddress: 'Destination',
+                mode: mode,
+                polyline: polyline,
+                steps: [{
+                    instruction: `Head toward destination (${distanceText})`,
+                    distance: distance,
+                    distanceText: distanceText,
+                    duration: Math.round(estimatedDuration),
+                    durationText: durationText,
+                    location: { lat: (origin.lat + destination.lat) / 2, lng: (origin.lng + destination.lng) / 2 }
+                }],
+                summary: `Direct route via straight line (${distanceText})`
+            },
+            alternatives: [],
+            modeUsed: mode,
+            isFallback: true
+        };
+
+        console.log('📍 Using fallback straight-line directions');
+        return route;
+    }
+
+    /**
+     * Calculate distance between two coordinates using Haversine formula
+     */
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371000; // Earth's radius in meters
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c; // Distance in meters
     }
 
     /**

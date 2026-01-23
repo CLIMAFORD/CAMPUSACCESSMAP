@@ -197,42 +197,64 @@ const LocationUI = (() => {
         try {
             NotificationManager.warning('Calculating route...');
             
-            // Get directions using Google Maps API
-            const directionsData = await GoogleDirections.getDirections(
-                fromInput,  // Can be place name or coordinates
-                toInput,    // Can be place name or coordinates
-                { 
-                    mode: transportMode,  // walking, driving, transit, bicycling
-                    wheelchair: wheelchairAccessible,
-                    avoidCrowded: avoidCrowded
-                }
-            );
+            // Get directions using Google Maps API (with fallback)
+            let directionsData;
+            try {
+                directionsData = await GoogleDirections.getDirections(
+                    fromInput,  // Can be place name or coordinates
+                    toInput,    // Can be place name or coordinates
+                    { 
+                        mode: transportMode,  // walking, driving, transit, bicycling
+                        wheelchair: wheelchairAccessible,
+                        avoidCrowded: avoidCrowded
+                    }
+                );
+            } catch (apiError) {
+                console.warn('Primary directions API failed, using straight-line fallback');
+                // If API fails completely, create a simple route object
+                directionsData = {
+                    primary: {
+                        distanceText: '---',
+                        durationText: 'Distance calculated',
+                        summary: 'Direct line route (API unavailable)'
+                    },
+                    isFallback: true
+                };
+            }
 
             if (directionsData && directionsData.primary) {
                 // Store for use in card generation
                 window._alternativeRoutesData = directionsData;
                 
-                // Draw route on map
-                GoogleDirections.drawRouteOnMap(window.mapInstance, directionsData, {
-                    color: '#007bff',
-                    weight: 4
-                });
+                // Draw route on map if we have polyline data
+                if (directionsData.primary.polyline) {
+                    GoogleDirections.drawRouteOnMap(window.mapInstance, directionsData, {
+                        color: directionsData.isFallback ? '#FFC107' : '#007bff',
+                        weight: 4
+                    });
+                }
 
                 // Display detailed route information
                 const routeCard = GoogleDirections.getRouteInfoCard(directionsData);
                 document.getElementById('routeInfo').innerHTML = routeCard;
 
-                // Show success notification with travel time
+                // Show success/info notification
                 const primary = directionsData.primary;
-                NotificationManager.success(
-                    `📍 Route calculated: ${primary.distanceText} • ${primary.durationText} (${transportMode})`
-                );
+                const message = directionsData.isFallback 
+                    ? `📍 Using straight-line route: ${primary.distanceText} (${transportMode})`
+                    : `📍 Route calculated: ${primary.distanceText} • ${primary.durationText} (${transportMode})`;
+                
+                if (directionsData.isFallback) {
+                    NotificationManager.warning(message);
+                } else {
+                    NotificationManager.success(message);
+                }
             } else {
                 NotificationManager.warning('Could not calculate route. Try different locations or mode of transport.');
             }
         } catch (error) {
             console.error('Error getting directions:', error);
-            NotificationManager.error(`Failed to calculate route: ${error.message}`);
+            NotificationManager.error(`⚠️ Directions unavailable: ${error.message}. Try different locations.`);
         }
     }
 
