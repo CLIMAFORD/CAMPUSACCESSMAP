@@ -9,19 +9,48 @@ const MapManager = (() => {
     let issueLayer = null;
 
     const initMap = () => {
-        // Use existing map instance created by QGIS2web
-        map = window.mapInstance;
+        // Create Leaflet map instance if not already created
+        if (!window.mapInstance) {
+            map = L.map('map', {
+                zoomControl: false,
+                maxZoom: 28,
+                minZoom: 1
+            }).fitBounds([[-0.014019237932566764, 34.58858076035669], [0.003651351954024558, 34.61493114399558]]);
+            
+            // Add OSM base layer
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>',
+                minZoom: 1,
+                maxZoom: 28,
+                minNativeZoom: 0,
+                maxNativeZoom: 19
+            }).addTo(map);
+            
+            // Store map instance globally for other modules
+            window.mapInstance = map;
+        } else {
+            map = window.mapInstance;
+        }
         
         if (!map) {
-            console.error('Map instance not found');
+            console.error('Map instance not created');
             return;
+        }
+
+        // Initialize QGIS2Web layers with correct symbology
+        if (typeof initQGIS2WebLayers === 'function') {
+            try {
+                initQGIS2WebLayers(map);
+            } catch (error) {
+                console.error('Error initializing QGIS2Web layers:', error);
+            }
         }
 
         // Create a feature group for issue markers
         issueLayer = L.featureGroup();
         map.addLayer(issueLayer);
 
-        console.log('Map initialized successfully');
+        console.log('✅ Map initialized successfully with QGIS2Web symbology');
     };
 
     const addIssueMarker = (issue) => {
