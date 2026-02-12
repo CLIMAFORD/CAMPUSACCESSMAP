@@ -1,0 +1,41 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Mac
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Temp
+tmp/
+temp/
+
+# Build
+dist/
+build/
+
+# Python
+__pycache__/
+*.pyc
+
+# Others
+.env
+.idea/
+coverage/
+
+# Ignore local Firebase debug files
+.firebase/
+
+# Ignore system files
+*.swp
