@@ -28,6 +28,8 @@
         <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
         <!-- Firebase Firestore SDK -->
         <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+        <!-- Firebase Storage SDK -->
+        <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
     </head>
     <body>
         <div id="map">
@@ -36,10 +38,16 @@
         <div id="user-status" style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
             Signing in...
         </div>
-        <form id="reportForm" style="position: absolute; top: 60px; right: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
-            <input type="text" id="desc" placeholder="e.g. Broken bench near Siriba" style="width: 100%; margin-bottom: 10px; padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-            <button type="submit" style="width: 100%; padding: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">Report Issue</button>
-        </form>
+        <div style="position:absolute;top:50px;right:10px;z-index:1000;background:white;padding:12px;border:1px solid #ccc;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2);width:280px;">
+            <form id="reportForm">
+                <input id="desc" placeholder="Describe the issue..." style="width:100%;padding:8px;margin-bottom:10px;" required>
+                <label style="display:block;margin-bottom:6px;font-weight:bold;">Take photo with camera:</label>
+                <input type="file" id="issueCamera" accept="image/*" capture="environment" style="width:100%;margin-bottom:12px;">
+                <label style="display:block;margin-bottom:6px;">Or choose from gallery:</label>
+                <input type="file" id="issueGallery" accept="image/*" style="width:100%;margin-bottom:12px;">
+                <button type="submit" style="width:100%;padding:10px;background:#0078d4;color:white;border:none;border-radius:4px;cursor:pointer;">Report Issue</button>
+            </form>
+        </div>
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
         <script src="js/L.Control.Layers.Tree.min.js"></script>
