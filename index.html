@@ -30,6 +30,14 @@
         <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
         <!-- Firebase Storage SDK -->
         <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+        <!-- Firebase Realtime Database (compat) -->
+        <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+        <!-- Leaflet Routing Machine -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css">
+        <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+        <!-- Leaflet Heatmap -->
+        <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     </head>
     <body>
         <div id="map">
@@ -47,6 +55,26 @@
                 <input type="file" id="issueGallery" accept="image/*" style="width:100%;margin-bottom:12px;">
                 <button type="submit" style="width:100%;padding:10px;background:#0078d4;color:white;border:none;border-radius:4px;cursor:pointer;">Report Issue</button>
             </form>
+        </div>
+        <!-- Routing Mode Selector and Clear Route Button -->
+        <div style="position:absolute;top:10px;right:10px;z-index:1000;background:white;padding:8px;border-radius:4px;border:1px solid #ccc;">
+            <label for="routing-mode">Mode:</label>
+            <select id="routing-mode">
+                <option value="foot-walking">Walk</option>
+                <option value="driving-car">Drive</option>
+                <option value="cycling-regular">Cycle</option>
+            </select>
+            <button id="clear-route" style="margin-left:8px;">Clear Route</button>
+        </div>
+
+        <!-- Heatmap Toggle -->
+        <div style="position:absolute;top:170px;right:10px;z-index:1000;background:white;padding:8px;border-radius:4px;border:1px solid #ccc;">
+            <label><input type="checkbox" id="heatmap-toggle"> Show Crowd/Traffic Heatmap</label>
+        </div>
+
+        <!-- Share My Location Button -->
+        <div style="position:absolute;top:220px;right:10px;z-index:1000;background:white;padding:8px;border-radius:4px;border:1px solid #ccc;">
+            <button id="share-location">Share My Location</button>
         </div>
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
@@ -1647,6 +1675,120 @@
                 }, {enableHighAccuracy: true, timeout: 10000});
             });
         }
+
+        /* ---------------- Directions / Routing (Leaflet Routing Machine + OpenRouteService) ---------------- */
+        // Replace with your OpenRouteService API key
+        var orsApiKey = 'PUT_YOUR_ORS_API_KEY_HERE';
+
+        function createORSRouter(profile) {
+            if (L.Routing && L.Routing.openrouteservice) {
+                return L.Routing.openrouteservice(orsApiKey, { profile: profile });
+            }
+            console.warn('OpenRouteService router not available; falling back to OSRM.');
+            return L.Routing.osrmv1();
+        }
+
+        var routingControl = L.Routing.control({
+            position: 'topright',
+            waypoints: [],
+            routeWhileDragging: true,
+            router: createORSRouter('foot-walking'),
+            showAlternatives: false,
+            fitSelectedRoute: true,
+            collapseBtn: true,
+            autoRoute: true
+        }).addTo(map);
+
+        // Add instructions panel styling (routing control contains its own panel)
+
+        // Add waypoints by clicking (first click = start, second = end)
+        map.on('click', function(e) {
+            var wps = routingControl.getWaypoints().filter(function(w) { return w && w.latLng; });
+            if (wps.length < 2) {
+                routingControl.spliceWaypoints(wps.length, 0, e.latlng);
+            } else {
+                // if two waypoints already set, replace end with new click
+                routingControl.spliceWaypoints(1, 1, e.latlng);
+            }
+        });
+
+        // Mode selector (Walk, Drive, Cycle)
+        document.getElementById('routing-mode').addEventListener('change', function(e) {
+            var profile = e.target.value; // e.g. 'foot-walking', 'driving-car', 'cycling-regular'
+            routingControl.setRouter(createORSRouter(profile));
+            routingControl.route();
+        });
+
+        // Clear route
+        document.getElementById('clear-route').addEventListener('click', function() {
+            routingControl.setWaypoints([]);
+        });
+
+        /* ---------------- Crowd / Traffic Heatmap (Leaflet.heat + Firebase Realtime DB) ---------------- */
+        var heatmapLayer = null;
+        var heatmapListener = null;
+
+        function createOrUpdateHeatmap(points) {
+            if (heatmapLayer) {
+                heatmapLayer.setLatLngs(points);
+            } else {
+                heatmapLayer = L.heatLayer(points, {
+                    radius: 25,
+                    blur: 15,
+                    gradient: {0.2: 'blue', 0.4: 'cyan', 0.6: 'lime', 0.8: 'yellow', 1.0: 'red'}
+                }).addTo(map);
+            }
+        }
+
+        document.getElementById('heatmap-toggle').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                var ref = firebase.database().ref('userLocations');
+                heatmapListener = function(snapshot) {
+                    var pts = [];
+                    snapshot.forEach(function(child) {
+                        var d = child.val();
+                        if (d && d.lat && d.lng) pts.push([d.lat, d.lng, 1]);
+                    });
+                    createOrUpdateHeatmap(pts);
+                };
+                ref.on('value', heatmapListener, function(err) { console.error('Heatmap DB error', err); });
+            } else {
+                if (heatmapLayer) { map.removeLayer(heatmapLayer); heatmapLayer = null; }
+                if (heatmapListener) {
+                    firebase.database().ref('userLocations').off('value', heatmapListener);
+                    heatmapListener = null;
+                }
+            }
+        });
+
+        /* ---------------- Share My Location (optional) ---------------- */
+        var shareWatchId = null;
+        var shareBtn = document.getElementById('share-location');
+        shareBtn.addEventListener('click', function() {
+            if (!navigator.geolocation) return alert('Geolocation not supported');
+            if (shareWatchId) {
+                navigator.geolocation.clearWatch(shareWatchId);
+                shareWatchId = null;
+                shareBtn.innerText = 'Share My Location';
+                return;
+            }
+            shareBtn.innerText = 'Sharing...';
+            shareWatchId = navigator.geolocation.watchPosition(function(pos) {
+                var uid = (auth && auth.currentUser && auth.currentUser.uid) ? auth.currentUser.uid : (window.currentUserUid || 'anonymous');
+                var lat = pos.coords.latitude;
+                var lng = pos.coords.longitude;
+                try {
+                    firebase.database().ref('userLocations/' + uid).set({ lat: lat, lng: lng, timestamp: firebase.database.ServerValue ? firebase.database.ServerValue.TIMESTAMP : Date.now() });
+                } catch (err) {
+                    console.error('Failed to write location to Realtime DB', err);
+                }
+            }, function(err) {
+                console.error('watchPosition error', err);
+                alert('Could not share location: ' + err.message);
+                shareBtn.innerText = 'Share My Location';
+                if (shareWatchId) { navigator.geolocation.clearWatch(shareWatchId); shareWatchId = null; }
+            }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 });
+        });
 
         </script>
     </body>
