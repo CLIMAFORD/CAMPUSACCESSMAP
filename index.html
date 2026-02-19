@@ -40,7 +40,7 @@
 
         <!-- Leaflet Heatmap (script moved below Leaflet.js) -->
     </head>
-    <body x-data="{ heatmapOn: false, sharing: false, showRoutingSettings:false, orsKey: '', useORS: true, googleKey: '', useGoogle: false, init() { try { this.orsKey = localStorage.getItem('campus_ors_key') || ''; this.useORS = localStorage.getItem('campus_use_ors') !== 'false'; this.googleKey = localStorage.getItem('campus_google_key') || ''; this.useGoogle = localStorage.getItem('campus_use_google') === 'true'; } catch(e) { /* storage blocked (tracking prevention) */ } }, saveORSKey() { try { localStorage.setItem('campus_ors_key', this.orsKey || ''); localStorage.setItem('campus_use_ors', this.useORS ? 'true' : 'false'); window.setORSFromUI(this.orsKey, this.useORS); alert('ORS key saved (browser only)'); } catch(e){ alert('Unable to save ORS key: ' + e.message); } }, clearORSKey() { try { localStorage.removeItem('campus_ors_key'); localStorage.removeItem('campus_use_ors'); this.orsKey = ''; this.useORS = false; window.setORSFromUI('', false); } catch(e) { /* ignore */ } }, saveGoogleKey() { try { localStorage.setItem('campus_google_key', this.googleKey || ''); localStorage.setItem('campus_use_google', this.useGoogle ? 'true' : 'false'); window.setGoogleFromUI(this.googleKey, this.useGoogle); alert('Google key saved (browser only)'); } catch(e){ alert('Unable to save Google key: ' + e.message); } }, clearGoogleKey() { try { localStorage.removeItem('campus_google_key'); localStorage.removeItem('campus_use_google'); this.googleKey = ''; this.useGoogle = false; window.setGoogleFromUI('', false); } catch(e) { /* ignore */ } } }">
+    <body x-data="{ heatmapOn: false, sharing: false, showRoutingSettings:false, orsKey: '', useORS: true, init() { try { this.orsKey = localStorage.getItem('campus_ors_key') || ''; this.useORS = localStorage.getItem('campus_use_ors') !== 'false'; } catch(e) { /* storage blocked (tracking prevention) */ } }, saveORSKey() { try { localStorage.setItem('campus_ors_key', this.orsKey || ''); localStorage.setItem('campus_use_ors', this.useORS ? 'true' : 'false'); window.setORSFromUI(this.orsKey, this.useORS); alert('ORS key saved (browser only)'); } catch(e){ alert('Unable to save ORS key: ' + e.message); } }, clearORSKey() { try { localStorage.removeItem('campus_ors_key'); localStorage.removeItem('campus_use_ors'); this.orsKey = ''; this.useORS = false; window.setORSFromUI('', false); } catch(e) { /* ignore */ } } }">
         <div class="mx-auto mt-6 flex items-start gap-6" style="max-width: 1280px;">
             <!-- MAP (fixed extent restored) -->
             <div id="map" style="width: 934px; height: 675px; box-shadow: 0 6px 18px rgba(0,0,0,0.15); border-radius:4px; overflow:hidden;">
@@ -70,14 +70,14 @@
                         <button @click="showRoutingSettings = !showRoutingSettings" class="px-2 py-1 bg-gray-50 border rounded text-xs" title="Routing settings">Routing settings</button>
                     </div>
 
-                    <!-- Google place inputs + route button (visible when Google services are enabled) -->
+                    <!-- Place search + route (OpenRouteService) -->
                     <div class="mt-3">
                         <label class="block text-xs text-gray-600 mb-1">Origin</label>
                         <input id="gm-origin" placeholder="Search origin or click map" class="w-full border rounded px-2 py-1 text-xs mb-2" />
                         <label class="block text-xs text-gray-600 mb-1">Destination</label>
                         <input id="gm-destination" placeholder="Search destination or click map" class="w-full border rounded px-2 py-1 text-xs mb-2" />
                         <div class="flex gap-2">
-                            <button id="gm-route" class="flex-1 bg-indigo-600 text-white px-2 py-1 rounded text-xs">Go (Google)</button>
+                            <button id="gm-route" class="flex-1 bg-indigo-600 text-white px-2 py-1 rounded text-xs">Go (ORS)</button>
                             <button id="gm-clear" class="flex-1 bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">Clear</button>
                         </div>
                         <div id="gm-travel-info" class="mt-2 text-xs text-gray-600"></div>
@@ -1824,28 +1824,28 @@
 
         // Add waypoints by clicking (first click = start, second = end)
         map.on('click', function(e) {
-            // If Google services are enabled in-browser, use map clicks to set origin/destination for Google routing
-            if (window.useGoogleActive) {
+            // If ORS place-search is active in-browser, use map clicks to set origin/destination for ORS routing
+            if (window.useORSActive) {
                 try {
-                    if (!googleOriginMarker) {
-                        googleOriginMarker = L.marker(e.latlng).addTo(map).bindPopup('Origin').openPopup();
+                    if (!orsOriginMarker) {
+                        orsOriginMarker = L.marker(e.latlng).addTo(map).bindPopup('Origin').openPopup();
                         document.getElementById('gm-origin').value = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
                         return;
                     }
-                    if (!googleDestinationMarker) {
-                        googleDestinationMarker = L.marker(e.latlng).addTo(map).bindPopup('Destination').openPopup();
+                    if (!orsDestinationMarker) {
+                        orsDestinationMarker = L.marker(e.latlng).addTo(map).bindPopup('Destination').openPopup();
                         document.getElementById('gm-destination').value = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
                         // calculate immediately once destination selected
-                        calculateGoogleRoute();
+                        calculateORSRoute();
                         return;
                     }
                     // If both already present, replace origin with new click
-                    clearGoogleRoute();
-                    googleOriginMarker = L.marker(e.latlng).addTo(map).bindPopup('Origin').openPopup();
+                    clearORSRoute();
+                    orsOriginMarker = L.marker(e.latlng).addTo(map).bindPopup('Origin').openPopup();
                     document.getElementById('gm-origin').value = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
                     return;
                 } catch (err) {
-                    console.error('Google click handler error', err);
+                    console.error('ORS click handler error', err);
                 }
             }
 
@@ -1864,192 +1864,130 @@
             var profile = e.target.value; // e.g. 'foot-walking', 'driving-car', 'cycling-regular'
             routingControl.setRouter(createORSRouter(profile));
             routingControl.route();
-            // if Google services are active, re-calculate Google directions using selected transport mode
-            if (window.useGoogleActive) {
-                calculateGoogleRoute();
+            // if ORS place-search is active, re-calculate ORS directions using selected transport mode
+            if (window.useORSActive) {
+                calculateORSRoute();
             }
         });
 
         // Clear route
         document.getElementById('clear-route').addEventListener('click', function() {
             routingControl.setWaypoints([]);
-            clearGoogleRoute();
+            clearORSRoute();
         });
 
-        // Google route buttons
-        document.getElementById('gm-route').addEventListener('click', function() { calculateGoogleRoute(); });
-        document.getElementById('gm-clear').addEventListener('click', function() { clearGoogleRoute(); });
+        // ORS route buttons
+        document.getElementById('gm-route').addEventListener('click', function() { calculateORSRoute(); });
+        document.getElementById('gm-clear').addEventListener('click', function() { clearORSRoute(); });
 
-        /* ---------------- Google Maps Services (Places + Directions) - client-side only ---------------- */
-        // Browser-stored Google API key (if present)
-        var googleApiKey = '';
-        try { googleApiKey = localStorage.getItem('campus_google_key') || ''; } catch(e) { googleApiKey = ''; }
-        // runtime flag set when Google services are enabled
-        window.useGoogleActive = (function(){ try { return localStorage.getItem('campus_use_google') === 'true'; } catch(e) { return false; } })();
+        /* ---------------- OpenRouteService place search + directions (client-side) ---------------- */
+        // runtime flag (read from browser storage)
+        window.useORSActive = (function(){ try { return localStorage.getItem('campus_use_ors') !== 'false'; } catch(e) { return true; } })();
 
-        var googleDirectionsService = null;
-        var googleRouteLayer = L.layerGroup().addTo(map);
-        var googleOriginMarker = null, googleDestinationMarker = null;
-        var googleAutocompleteOrigin = null, googleAutocompleteDestination = null;
+        var orsRouteLayer = L.layerGroup().addTo(map);
+        var orsOriginMarker = null, orsDestinationMarker = null;
 
-        // Called from Alpine UI to enable/disable Google usage at runtime
-        window.setGoogleFromUI = function(key, use) {
-            try {
-                googleApiKey = key && key.trim() ? key.trim() : '';
-                window.useGoogleActive = !!use;
-                // update provider label
-                var el = document.getElementById('routing-provider');
-                if (el) el.innerText = window.useGoogleActive ? 'Google' : ( (localStorage.getItem('campus_use_ors') !== 'false' && orsApiKey && orsApiKey !== 'PUT_YOUR_ORS_API_KEY_HERE') ? 'ORS' : 'OSRM (fallback)');
-
-                if (window.useGoogleActive && googleApiKey) {
-                    loadGoogleScript(googleApiKey);
-                } else {
-                    // disable and clear any Google route currently shown
-                    clearGoogleRoute();
-                }
-            } catch (err) {
-                console.error('setGoogleFromUI', err);
-            }
-        };
-
-        // Auto-initialize Google services if user saved key + enabled in browser storage
-        try {
-            if (window.useGoogleActive && googleApiKey) loadGoogleScript(googleApiKey);
-        } catch (e) { /* ignore */ }
-
-        function loadGoogleScript(key) {
-            if (!key) { console.warn('No Google API key provided'); return; }
-            if (window.google && window.google.maps && window.google.maps.places) {
-                initGoogleMapsServices();
-                return;
-            }
-            // avoid loading twice
-            if (document.getElementById('google-maps-api-script')) return;
-            var s = document.createElement('script');
-            s.id = 'google-maps-api-script';
-            s.async = true; s.defer = true;
-            s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(key) + '&libraries=places&callback=initGoogleMapsServices';
-            s.onerror = function() { alert('Failed to load Google Maps script — check API key and network.'); };
-            document.head.appendChild(s);
+        function parseLatLngInput(v) {
+            if (!v || !v.toString) return null;
+            var s = v.toString().trim();
+            var m = s.match(/^\s*([-+]?\d{1,3}(?:\.\d+)?)\s*,\s*([-+]?\d{1,3}(?:\.\d+)?)\s*$/);
+            if (m) return { lat: parseFloat(m[1]), lon: parseFloat(m[2]) };
+            return null;
         }
 
-        // Called by the Google Maps script once loaded
-        window.initGoogleMapsServices = function() {
-            try {
-                googleDirectionsService = new google.maps.DirectionsService();
-                // wire up autocomplete inputs (if present)
-                var originInput = document.getElementById('gm-origin');
-                var destInput = document.getElementById('gm-destination');
-                if (originInput) {
-                    googleAutocompleteOrigin = new google.maps.places.Autocomplete(originInput);
-                    googleAutocompleteOrigin.addListener('place_changed', function() {
-                        var p = googleAutocompleteOrigin.getPlace();
-                        if (p && p.geometry && p.geometry.location) {
-                            var lat = p.geometry.location.lat(), lng = p.geometry.location.lng();
-                            var latlng = L.latLng(lat, lng);
-                            map.setView(latlng, 16);
-                            if (googleOriginMarker) { googleOriginMarker.setLatLng(latlng); } else { googleOriginMarker = L.marker(latlng).addTo(map); }
-                            originInput.value = p.formatted_address || (lat.toFixed(6) + ', ' + lng.toFixed(6));
+        function geocodeORS(query) {
+            return new Promise(function(resolve, reject) {
+                if (!orsApiKey || orsApiKey === 'PUT_YOUR_ORS_API_KEY_HERE') return reject(new Error('No ORS API key configured'));
+                fetch('https://api.openrouteservice.org/geocode/search?api_key=' + encodeURIComponent(orsApiKey) + '&text=' + encodeURIComponent(query) + '&size=5')
+                    .then(function(r){ if (!r.ok) throw new Error('Geocoding failed: ' + r.status); return r.json(); })
+                    .then(function(json){
+                        if (json && json.features && json.features.length) {
+                            var f = json.features[0];
+                            var c = f.geometry && f.geometry.coordinates;
+                            resolve({ lat: c[1], lon: c[0], label: f.properties && f.properties.label ? f.properties.label : query });
+                        } else {
+                            reject(new Error('No geocoding results'));
                         }
-                    });
-                }
-                if (destInput) {
-                    googleAutocompleteDestination = new google.maps.places.Autocomplete(destInput);
-                    googleAutocompleteDestination.addListener('place_changed', function() {
-                        var p = googleAutocompleteDestination.getPlace();
-                        if (p && p.geometry && p.geometry.location) {
-                            var lat = p.geometry.location.lat(), lng = p.geometry.location.lng();
-                            var latlng = L.latLng(lat, lng);
-                            map.setView(latlng, 16);
-                            if (googleDestinationMarker) { googleDestinationMarker.setLatLng(latlng); } else { googleDestinationMarker = L.marker(latlng).addTo(map); }
-                            destInput.value = p.formatted_address || (lat.toFixed(6) + ', ' + lng.toFixed(6));
-                            // auto-run route if origin already present
-                            if (googleOriginMarker) calculateGoogleRoute();
-                        }
-                    });
-                }
-                window.useGoogleActive = true;
-            } catch (err) {
-                console.error('initGoogleMapsServices error', err);
-            }
-        };
-
-        // Decode an encoded polyline returned by Google DirectionsService
-        function decodePolyline(encoded) {
-            if (!encoded) return [];
-            var points = [];
-            var index = 0, len = encoded.length;
-            var lat = 0, lng = 0;
-            while (index < len) {
-                var b, shift = 0, result = 0;
-                do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-                var dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
-                lat += dlat;
-                shift = 0; result = 0;
-                do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-                var dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
-                lng += dlng;
-                points.push([lat / 1e5, lng / 1e5]);
-            }
-            return points;
+                    }).catch(function(err){ reject(err); });
+            });
         }
 
-        // Calculate directions using Google and draw a Leaflet polyline (also shows travel time)
-        function calculateGoogleRoute() {
-            if (!window.useGoogleActive) return;
-            if (!googleDirectionsService) { alert('Google services are not initialized. Save a valid API key in Routing settings.'); return; }
+        function formatDistance(m) {
+            if (m >= 1000) return (m/1000).toFixed(1) + ' km';
+            return Math.round(m) + ' m';
+        }
+        function formatDuration(s) {
+            if (!s && s !== 0) return '';
+            s = Math.round(s);
+            var h = Math.floor(s/3600); var m = Math.floor((s%3600)/60);
+            if (h > 0) return h + ' h ' + m + ' min';
+            return m + ' min';
+        }
+
+        function calculateORSRoute() {
+            if (!window.useORSActive) return;
+            if (!orsApiKey || orsApiKey === 'PUT_YOUR_ORS_API_KEY_HERE') { alert('Please save a valid OpenRouteService API key in Routing settings.'); return; }
             var originVal = document.getElementById('gm-origin').value;
             var destVal = document.getElementById('gm-destination').value;
             if (!originVal || !destVal) { alert('Please provide both origin and destination (or click on the map).'); return; }
 
-            // Map routing-mode to Google travel mode
-            var mode = document.getElementById('routing-mode').value;
-            var travelMode = google.maps.TravelMode.DRIVING;
-            if (mode === 'foot-walking') travelMode = google.maps.TravelMode.WALKING;
-            else if (mode === 'cycling-regular') travelMode = google.maps.TravelMode.BICYCLING;
-            else if (mode === 'driving-car') travelMode = google.maps.TravelMode.DRIVING;
+            var p1 = parseLatLngInput(originVal);
+            var p2 = parseLatLngInput(destVal);
 
-            googleDirectionsService.route({
-                origin: originVal,
-                destination: destVal,
-                travelMode: travelMode,
-                provideRouteAlternatives: false
-            }, function(response, status) {
-                if (status === 'OK' && response && response.routes && response.routes.length) {
-                    clearGoogleRoute();
-                    var route = response.routes[0];
-                    var enc = route.overview_polyline && route.overview_polyline.points;
-                    var coords = decodePolyline(enc);
-                    if (coords && coords.length) {
-                        var latlngs = coords.map(function(p) { return [p[0], p[1]]; });
-                        var poly = L.polyline(latlngs, {color: '#ff5722', weight: 5, opacity: 0.9}).addTo(googleRouteLayer);
-                        map.fitBounds(poly.getBounds(), {padding: [40,40]});
+            var promiseA = p1 ? Promise.resolve(p1) : geocodeORS(originVal);
+            var promiseB = p2 ? Promise.resolve(p2) : geocodeORS(destVal);
+
+            Promise.all([promiseA, promiseB]).then(function(results) {
+                var a = results[0], b = results[1];
+                var profile = document.getElementById('routing-mode').value || 'driving-car';
+                // call ORS directions (geojson)
+                var body = { coordinates: [ [a.lon, a.lat], [b.lon, b.lat] ] };
+                fetch('https://api.openrouteservice.org/v2/directions/' + encodeURIComponent(profile) + '/geojson', {
+                    method: 'POST',
+                    headers: { 'Authorization': orsApiKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                }).then(function(r){ if (!r.ok) throw new Error('ORS directions failed: ' + r.status); return r.json(); })
+                .then(function(json){
+                    if (!json || !json.features || !json.features.length) throw new Error('No route returned');
+                    var feat = json.features[0];
+                    var coords = feat.geometry && feat.geometry.coordinates ? feat.geometry.coordinates.map(function(c){ return [c[1], c[0]]; }) : [];
+                    orsRouteLayer.clearLayers();
+                    if (coords.length) {
+                        var poly = L.polyline(coords, { color: '#1976d2', weight: 5, opacity: 0.9 }).addTo(orsRouteLayer);
+                        map.fitBounds(poly.getBounds(), { padding: [40,40] });
                     }
-                    // show origin/destination markers
-                    var leg = route.legs && route.legs[0];
-                    if (leg) {
-                        if (!googleOriginMarker) googleOriginMarker = L.marker([leg.start_location.lat(), leg.start_location.lng()]).addTo(map);
-                        else googleOriginMarker.setLatLng([leg.start_location.lat(), leg.start_location.lng()]);
-                        if (!googleDestinationMarker) googleDestinationMarker = L.marker([leg.end_location.lat(), leg.end_location.lng()]).addTo(map);
-                        else googleDestinationMarker.setLatLng([leg.end_location.lat(), leg.end_location.lng()]);
-                        document.getElementById('gm-travel-info').innerText = (leg.duration && leg.duration.text ? leg.duration.text : '') + ' • ' + (leg.distance && leg.distance.text ? leg.distance.text : '');
-                    }
+                    // markers
+                    if (!orsOriginMarker) orsOriginMarker = L.marker([a.lat, a.lon]).addTo(map); else orsOriginMarker.setLatLng([a.lat, a.lon]);
+                    if (!orsDestinationMarker) orsDestinationMarker = L.marker([b.lat, b.lon]).addTo(map); else orsDestinationMarker.setLatLng([b.lat, b.lon]);
+
+                    // travel summary
+                    var summary = feat.properties && feat.properties.summary ? feat.properties.summary : null;
+                    var dist = summary && (summary.distance || summary.distance_km || summary.total_distance) ? (summary.distance || summary.distance_km || summary.total_distance) : null;
+                    var dur = summary && (summary.duration || summary.total_time || summary.total_seconds) ? (summary.duration || summary.total_time || summary.total_seconds) : null;
+                    var infoEl = document.getElementById('gm-travel-info');
+                    if (infoEl) infoEl.innerText = (dur ? formatDuration(dur) + ' • ' : '') + (dist ? formatDistance(dist) : '');
+
                     // update provider label
-                    var el = document.getElementById('routing-provider'); if (el) el.innerText = 'Google';
-                } else {
-                    console.error('Google Directions error', status, response);
-                    alert('Google Directions failed: ' + status);
-                }
+                    var el = document.getElementById('routing-provider'); if (el) el.innerText = 'ORS';
+                }).catch(function(err){
+                    console.error('ORS directions error', err);
+                    alert('OpenRouteService directions failed: ' + (err && err.message ? err.message : 'unknown'));
+                });
+            }).catch(function(err){
+                console.error('ORS geocode error', err);
+                alert('Geocoding failed: ' + (err && err.message ? err.message : 'no results'));
             });
         }
 
-        function clearGoogleRoute() {
+        function clearORSRoute() {
             try {
-                googleRouteLayer.clearLayers();
-                if (googleOriginMarker) { try { map.removeLayer(googleOriginMarker); } catch(e){} googleOriginMarker = null; }
-                if (googleDestinationMarker) { try { map.removeLayer(googleDestinationMarker); } catch(e){} googleDestinationMarker = null; }
+                orsRouteLayer.clearLayers();
+                if (orsOriginMarker) { try { map.removeLayer(orsOriginMarker); } catch(e){} orsOriginMarker = null; }
+                if (orsDestinationMarker) { try { map.removeLayer(orsDestinationMarker); } catch(e){} orsDestinationMarker = null; }
                 var info = document.getElementById('gm-travel-info'); if (info) info.innerText = '';
-            } catch (err) { console.error('clearGoogleRoute', err); }
+                // reset provider label if needed
+                var el = document.getElementById('routing-provider'); if (el) el.innerText = ( (localStorage.getItem('campus_use_ors') !== 'false' && orsApiKey && orsApiKey !== 'PUT_YOUR_ORS_API_KEY_HERE') ? 'ORS' : 'OSRM (fallback)');
+            } catch (err) { console.error('clearORSRoute', err); }
         }
 
         /* ---------------- Crowd / Traffic Heatmap (Leaflet.heat + Firebase Realtime DB) ---------------- */
