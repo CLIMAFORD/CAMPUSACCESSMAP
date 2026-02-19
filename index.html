@@ -43,6 +43,9 @@
         <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
         <!-- Leaflet Routing Machine (script moved below Leaflet.js to ensure `L` is defined) -->
         <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css">
+        <!-- Geocoder for routing/search inputs -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+        <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
         <!-- Leaflet Heatmap (script moved below Leaflet.js) -->
     </head>
@@ -89,15 +92,18 @@
                         </div>
                     </div>
 
-                    <!-- Place search + route (OpenRouteService) -->
+                    <!-- Directions inputs (geocodable start / end) -->
                     <div class="mt-3">
                         <label class="block text-xs text-gray-600 mb-1">Origin</label>
                         <input id="gm-origin" placeholder="Search origin or click map" class="w-full border rounded px-2 py-1 text-xs mb-2" />
                         <label class="block text-xs text-gray-600 mb-1">Destination</label>
                         <input id="gm-destination" placeholder="Search destination or click map" class="w-full border rounded px-2 py-1 text-xs mb-2" />
-                        <div class="flex gap-2">
-                            <button id="gm-route" class="flex-1 bg-indigo-600 text-white px-2 py-1 rounded text-xs">Go (ORS)</button>
+                        <div class="flex gap-2 mt-1">
+                            <button id="gm-route" class="flex-1 bg-indigo-600 text-white px-2 py-1 rounded text-xs">Get directions</button>
                             <button id="gm-clear" class="flex-1 bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">Clear</button>
+                        </div>
+                        <div class="flex gap-2 mt-2">
+                            <button id="set-start-location" class="flex-1 bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">Use my location</button>
                         </div>
                         <div id="gm-travel-info" class="mt-2 text-xs text-gray-600"></div>
                     </div>
@@ -1618,7 +1624,8 @@
 
         function makePopupContent(docId, data) {
             var reportedTime = data.createdAt && data.createdAt.toDate ? data.createdAt.toDate().toLocaleString() : 'just now';
-            var html = '<div><strong>' + (data.desc || '') + '</strong></div>' +
+            var imgHtml = (data.photoUrl) ? '<img src="' + data.photoUrl + '" style="max-width:220px;border-radius:4px;display:block;margin-bottom:8px;">' : '';
+            var html = imgHtml + '<div><strong>' + (data.desc || '') + '</strong></div>' +
                        '<div>Status: <em>' + (data.status || 'open') + '</em></div>' +
                        '<div>Reported: ' + reportedTime + '</div>';
             if (window.currentUserUid && data.createdBy === window.currentUserUid) {
@@ -1740,164 +1747,182 @@
         // Handle report form submit
         var reportForm = document.getElementById('reportForm');
         if (reportForm) {
-            reportForm.addEventListener('submit', function(e) {
+            reportForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                var descEl = document.getElementById('desc');
-                var desc = descEl ? descEl.value.trim() : '';
-                if (!desc) return alert('Please enter a description');
+                try {
+                    var descEl = document.getElementById('desc');
+                    var desc = descEl ? descEl.value.trim() : '';
+                    if (!desc) return alert('Please enter a description');
 
-                if (!navigator.geolocation) {
-                    return alert('Geolocation is not supported by your browser');
-                }
+                    if (!navigator.geolocation) return alert('Geolocation is not supported by your browser');
 
-                navigator.geolocation.getCurrentPosition(function(pos) {
+                    // get current position (promise wrapper)
+                    var pos = await new Promise(function(resolve, reject) {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
+                    });
+
                     var lat = pos.coords.latitude;
                     var lng = pos.coords.longitude;
                     var uid = (auth.currentUser && auth.currentUser.uid) ? auth.currentUser.uid : (window.currentUserUid || 'anonymous');
-                    db.collection('issues').add({
+
+                    // check file inputs
+                    var file = (document.getElementById('issueCamera').files[0] || document.getElementById('issueGallery').files[0]) || null;
+                    var photoUrl = null;
+
+                    if (file) {
+                        var safeName = Date.now() + '_' + file.name.replace(/[^a-z0-9.\-_]/gi, '_');
+                        var storageRef = firebase.storage().ref('issues_photos/' + safeName);
+                        console.log('Uploading report photo...', safeName);
+                        await storageRef.put(file);
+                        photoUrl = await storageRef.getDownloadURL();
+                        console.log('Photo uploaded, url:', photoUrl);
+                    }
+
+                    var payload = {
                         desc: desc,
                         lat: lat,
                         lng: lng,
                         status: 'open',
                         createdBy: uid,
+                        photoUrl: photoUrl || null,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }).then(function() {
-                        alert('Issue reported — thank you');
-                        if (descEl) descEl.value = '';
-                    }).catch(function(err) {
-                        console.error('Failed to save issue', err);
-                        alert('Failed to report issue: ' + err.message);
-                    });
-                }, function(err) {
-                    console.error('Geolocation error', err);
-                    alert('Could not get location: ' + err.message);
-                }, {enableHighAccuracy: true, timeout: 10000});
+                    };
+
+                    await db.collection('issues').add(payload);
+                    console.log('Issue saved', payload);
+                    alert('Issue reported — thank you');
+                    reportForm.reset();
+                } catch (err) {
+                    console.error('Report submit error', err);
+                    alert('Failed to submit report: ' + (err && err.message ? err.message : err));
+                }
             });
         }
 
-        /* ---------------- Directions / Routing (Leaflet Routing Machine + OpenRouteService) ---------------- */
-        // Replace with your OpenRouteService API key
-        var orsApiKey = 'PUT_YOUR_ORS_API_KEY_HERE';
-        // prefer saved key from browser storage (if available)
-        try {
-            var _savedOrs = localStorage.getItem('campus_ors_key');
-            if (_savedOrs && _savedOrs.trim()) {
-                orsApiKey = _savedOrs.trim();
-            }
-        } catch (e) {
-            /* storage access blocked (tracking prevention) — ignore */
-        }
+        /* ---------------- Directions / Routing (Leaflet Routing Machine + Nominatim geocoder + OSRM walking) ---------------- */
+        // Nominatim geocoder (Control.Geocoder)
+        var geocoder = L.Control.Geocoder.nominatim();
 
-        // called from the UI to update the router/key at runtime
-        window.setORSFromUI = function(key, use) {
-            try {
-                orsApiKey = key && key.trim() ? key.trim() : 'PUT_YOUR_ORS_API_KEY_HERE';
-                if (typeof routingControl !== 'undefined' && routingControl.setRouter) {
-                    var router = (use && orsApiKey && orsApiKey !== 'PUT_YOUR_ORS_API_KEY_HERE') ? createORSRouter('foot-walking') : L.Routing.osrmv1();
-                    routingControl.setRouter(router);
-                    routingControl.route();
-                }
-                var el = document.getElementById('routing-provider');
-                if (el) el.innerText = (use && orsApiKey && orsApiKey !== 'PUT_YOUR_ORS_API_KEY_HERE') ? 'ORS' : 'OSRM (fallback)';
-            } catch (err) {
-                console.error('setORSFromUI error', err);
-            }
-        };
-
-        function createORSRouter(profile) {
-            var useORSFlag = true;
-            try { useORSFlag = localStorage.getItem('campus_use_ors') !== 'false'; } catch(e) { useORSFlag = true; }
-            if (!useORSFlag) {
-                return L.Routing.osrmv1();
-            }
-            if (!orsApiKey || orsApiKey === 'PUT_YOUR_ORS_API_KEY_HERE') {
-                console.warn('No ORS API key configured — using OSRM fallback.');
-                return L.Routing.osrmv1();
-            }
-            if (L.Routing && L.Routing.openrouteservice) {
-                return L.Routing.openrouteservice(orsApiKey, { profile: profile });
-            }
-            console.warn('OpenRouteService router not available; falling back to OSRM.');
-            return L.Routing.osrmv1();
-        }
+        // Plan + Routing control (walk/campus paths default)
+        var plan = L.Routing.plan([ null, null ], {
+            geocoder: geocoder,
+            routeWhileDragging: true,
+            draggableWaypoints: true,
+            createMarker: function(i, wp) { return L.marker(wp.latLng, { draggable: true }); }
+        });
 
         var routingControl = L.Routing.control({
-            position: 'topright',
-            waypoints: [],
+            plan: plan,
+            router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1', profile: 'foot' }),
             routeWhileDragging: true,
-            router: createORSRouter('foot-walking'),
-            showAlternatives: false,
             fitSelectedRoute: true,
-            collapseBtn: true,
-            autoRoute: true
+            showAlternatives: false,
+            collapsible: false,
+            position: 'topright'
         }).addTo(map);
-        // show which provider is active (ORS if configured, otherwise OSRM fallback)
-        if (document.getElementById('routing-provider')) {
-            var useORSFlag = true;
-            try { useORSFlag = localStorage.getItem('campus_use_ors') !== 'false'; } catch(e) { useORSFlag = true; }
-            document.getElementById('routing-provider').innerText = ( useORSFlag && orsApiKey && orsApiKey !== 'PUT_YOUR_ORS_API_KEY_HERE' ) ? 'ORS' : 'OSRM (fallback)';
+
+        // helper: parse lat,lng input like "-0.0, 34.0"
+        function parseLatLngInput(v) {
+            if (!v || !v.toString) return null;
+            var s = v.toString().trim();
+            var m = s.match(/^\s*([-+]?\d{1,3}(?:\.\d+)?)\s*,\s*([-+]?\d{1,3}(?:\.\d+)?)\s*$/);
+            if (m) return { lat: parseFloat(m[1]), lon: parseFloat(m[2]) };
+            return null;
         }
 
-        // Add instructions panel styling (routing control contains its own panel)
-
-        // Add waypoints by clicking (first click = start, second = end)
-        map.on('click', function(e) {
-            // If ORS place-search is active in-browser, use map clicks to set origin/destination for ORS routing
-            if (window.useORSActive) {
+        function geocodeQuery(query) {
+            return new Promise(function(resolve, reject) {
+                if (!query || !query.trim()) return reject(new Error('Empty query'));
                 try {
-                    if (!orsOriginMarker) {
-                        orsOriginMarker = L.marker(e.latlng).addTo(map).bindPopup('Origin').openPopup();
-                        document.getElementById('gm-origin').value = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
-                        return;
-                    }
-                    if (!orsDestinationMarker) {
-                        orsDestinationMarker = L.marker(e.latlng).addTo(map).bindPopup('Destination').openPopup();
-                        document.getElementById('gm-destination').value = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
-                        // calculate immediately once destination selected
-                        calculateORSRoute();
-                        return;
-                    }
-                    // If both already present, replace origin with new click
-                    clearORSRoute();
-                    orsOriginMarker = L.marker(e.latlng).addTo(map).bindPopup('Origin').openPopup();
-                    document.getElementById('gm-origin').value = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
-                    return;
-                } catch (err) {
-                    console.error('ORS click handler error', err);
+                    geocoder.geocode(query, function(results) {
+                        if (results && results.length) return resolve({ lat: results[0].center.lat, lon: results[0].center.lng, name: results[0].name });
+                        reject(new Error('No geocoding results'));
+                    });
+                } catch (err) { reject(err); }
+            });
+        }
+
+        // Calculate route using values in the sidebar origin/destination inputs
+        async function calculateLRMRouteFromInputs() {
+            var originVal = document.getElementById('gm-origin').value;
+            var destVal = document.getElementById('gm-destination').value;
+            if (!originVal || !destVal) { return alert('Please provide both origin and destination'); }
+            try {
+                var p1 = parseLatLngInput(originVal);
+                var p2 = parseLatLngInput(destVal);
+                if (!p1) {
+                    var r1 = await geocodeQuery(originVal);
+                    p1 = { lat: r1.lat, lon: r1.lon };
                 }
+                if (!p2) {
+                    var r2 = await geocodeQuery(destVal);
+                    p2 = { lat: r2.lat, lon: r2.lon };
+                }
+                plan.setWaypoints([ L.latLng(p1.lat, p1.lon), L.latLng(p2.lat, p2.lon) ]);
+                routingControl.route();
+            } catch (err) {
+                console.error('Routing/geocode error', err);
+                alert('Failed to calculate route: ' + (err && err.message ? err.message : 'unknown'));
+            }
+        }
+
+        function clearLRMRoute() {
+            plan.setWaypoints([]);
+            var oi = document.getElementById('gm-origin'); if (oi) oi.value = '';
+            var di = document.getElementById('gm-destination'); if (di) di.value = '';
+            var info = document.getElementById('gm-travel-info'); if (info) info.innerText = '';
+        }
+
+        // Update travel info when routes are found
+        routingControl.on('routesfound', function(e) {
+            try {
+                var r = e.routes && e.routes[0]; if (!r) return;
+                var dist = (r.summary && (r.summary.totalDistance || r.summary.distance)) || r.distance || 0;
+                var dur = (r.summary && (r.summary.totalTime || r.summary.duration)) || r.duration || 0;
+                var infoEl = document.getElementById('gm-travel-info');
+                if (infoEl) infoEl.innerText = (dur ? Math.round(dur/60) + ' min • ' : '') + (dist ? (dist/1000).toFixed(2) + ' km' : '');
+                console.log('routesfound summary', { distance: dist, duration: dur, route: r });
+            } catch (err) { console.error(err); }
+        });
+
+        // Wire sidebar buttons
+        document.getElementById('gm-route').addEventListener('click', function(){ calculateLRMRouteFromInputs(); });
+        document.getElementById('gm-clear').addEventListener('click', function(){ clearLRMRoute(); });
+        document.getElementById('set-start-location')?.addEventListener('click', function() {
+            if (!navigator.geolocation) return alert('Geolocation not supported');
+            navigator.geolocation.getCurrentPosition(function(px) {
+                var latlng = px.coords.latitude.toFixed(6) + ', ' + px.coords.longitude.toFixed(6);
+                var oi = document.getElementById('gm-origin'); if (oi) oi.value = latlng;
+                if (document.getElementById('gm-destination') && document.getElementById('gm-destination').value) calculateLRMRouteFromInputs();
+            }, function(err){ console.error('geoloc error', err); alert('Unable to get location'); });
+        });
+
+        // Map click: populate origin/destination inputs (click once = origin, second click = destination)
+        map.off('click'); // ensure single handler
+        map.on('click', function(e) {
+            var originInput = document.getElementById('gm-origin');
+            var destInput = document.getElementById('gm-destination');
+            if (originInput && destInput) {
+                if (!originInput.value) {
+                    originInput.value = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
+                    return;
+                }
+                if (!destInput.value) {
+                    destInput.value = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
+                    calculateLRMRouteFromInputs();
+                    return;
+                }
+                // both present -> replace origin
+                originInput.value = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
+                return;
             }
 
-            // Default: Leaflet Routing Machine behavior
+            // fallback: keep old routingControl click-to-add behavior
             var wps = routingControl.getWaypoints().filter(function(w) { return w && w.latLng; });
-            if (wps.length < 2) {
-                routingControl.spliceWaypoints(wps.length, 0, e.latlng);
-            } else {
-                // if two waypoints already set, replace end with new click
-                routingControl.spliceWaypoints(1, 1, e.latlng);
-            }
+            if (wps.length < 2) routingControl.spliceWaypoints(wps.length, 0, e.latlng);
+            else routingControl.spliceWaypoints(1, 1, e.latlng);
         });
-
-        // Mode selector (Walk, Drive, Cycle)
-        document.getElementById('routing-mode').addEventListener('change', function(e) {
-            var profile = e.target.value; // e.g. 'foot-walking', 'driving-car', 'cycling-regular'
-            routingControl.setRouter(createORSRouter(profile));
-            routingControl.route();
-            // if ORS place-search is active, re-calculate ORS directions using selected transport mode
-            if (window.useORSActive) {
-                calculateORSRoute();
-            }
-        });
-
-        // Clear route
-        document.getElementById('clear-route').addEventListener('click', function() {
-            routingControl.setWaypoints([]);
-            clearORSRoute();
-        });
-
-        // ORS route buttons
-        document.getElementById('gm-route').addEventListener('click', function() { calculateORSRoute(); });
-        document.getElementById('gm-clear').addEventListener('click', function() { clearORSRoute(); });
 
         /* ---------------- OpenRouteService place search + directions (client-side) ---------------- */
         // runtime flag (read from browser storage)
@@ -2010,69 +2035,51 @@
         }
 
         /* ---------------- Crowd / Traffic Heatmap (Leaflet.heat + Firebase Realtime DB) ---------------- */
-        var heatmapLayer = null;
+
         var heatmapListener = null;
 
-        function createOrUpdateHeatmap(points) {
-            // normalize points to numeric lat/lng and ignore invalid entries
-            var normalized = (points || []).map(function(p){
-                var lat = parseFloat(p[0]);
-                var lng = parseFloat(p[1]);
-                var w = p.length > 2 ? parseFloat(p[2]) : 1;
-                if (isNaN(lat) || isNaN(lng)) return null;
-                return [lat, lng, isNaN(w) ? 1 : w];
-            }).filter(Boolean);
+        /* ---------------- Crowd / Traffic Heatmap (Leaflet.heat + Firebase Realtime DB) ---------------- */
+        var heatLayer = L.heatLayer([], { radius: 30, blur: 25, maxZoom: 17 }).addTo(map);
+        var heatRef = firebase.database().ref('user_locations');
+        var heatPointsMap = {}; // key -> [lat,lng,weight]
 
-            if (!normalized.length) {
-                if (heatmapLayer) { try { map.removeLayer(heatmapLayer); } catch(e){} heatmapLayer = null; }
-                return;
-            }
-
-            if (heatmapLayer) {
-                heatmapLayer.setLatLngs(normalized);
-            } else {
-                heatmapLayer = L.heatLayer(normalized, {
-                    radius: 25,
-                    blur: 15,
-                    gradient: {0.2: 'blue', 0.4: 'cyan', 0.6: 'lime', 0.8: 'yellow', 1.0: 'red'}
-                }).addTo(map);
-            }
-
-            // ensure heatmap canvas is placed on the overlay pane above tiles
-            try {
-                if (heatmapLayer && heatmapLayer._canvas) {
-                    heatmapLayer._canvas.style.zIndex = 450;
-                    var overlayPane = map.getPane && map.getPane('overlayPane');
-                    if (overlayPane && heatmapLayer._canvas.parentNode !== overlayPane) overlayPane.appendChild(heatmapLayer._canvas);
+        function enableHeatListeners() {
+            if (!heatRef) return;
+            heatRef.on('child_added', function(snap) {
+                var d = snap.val();
+                var lat = parseFloat(d && (d.lat || d.latitude));
+                var lng = parseFloat(d && (d.lng || d.lon || d.longitude));
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    heatPointsMap[snap.key] = [lat, lng, d && d.weight ? parseFloat(d.weight) : 1];
+                    heatLayer.setLatLngs(Object.values(heatPointsMap));
                 }
-                if (heatmapLayer && heatmapLayer.bringToFront) heatmapLayer.bringToFront();
-            } catch (err) { console.warn('Heatmap pane adjustment failed', err); }
+            });
+            heatRef.on('child_changed', function(snap) {
+                var d = snap.val();
+                var lat = parseFloat(d && (d.lat || d.latitude));
+                var lng = parseFloat(d && (d.lng || d.lon || d.longitude));
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    heatPointsMap[snap.key] = [lat, lng, d && d.weight ? parseFloat(d.weight) : 1];
+                    heatLayer.setLatLngs(Object.values(heatPointsMap));
+                }
+            });
+            heatRef.on('child_removed', function(snap) {
+                delete heatPointsMap[snap.key];
+                heatLayer.setLatLngs(Object.values(heatPointsMap));
+            });
+        }
+
+        function disableHeatListeners() {
+            try { heatRef.off('child_added'); heatRef.off('child_changed'); heatRef.off('child_removed'); } catch(e) { console.warn(e); }
+            heatPointsMap = {};
+            heatLayer.setLatLngs([]);
         }
 
         document.getElementById('heatmap-toggle').addEventListener('change', function(e) {
             if (e.target.checked) {
-                var ref = firebase.database().ref('userLocations');
-                heatmapListener = function(snapshot) {
-                    var pts = [];
-                    snapshot.forEach(function(child) {
-                        var d = child.val();
-                        var lat = parseFloat(d && (d.lat || d.latitude));
-                        var lng = parseFloat(d && (d.lng || d.lon || d.longitude));
-                        if (!isNaN(lat) && !isNaN(lng)) pts.push([lat, lng, d && d.weight ? parseFloat(d.weight) : 1]);
-                    });
-                    if (!pts.length) {
-                        if (heatmapLayer) { try { map.removeLayer(heatmapLayer); } catch(e){} heatmapLayer = null; }
-                        return;
-                    }
-                    createOrUpdateHeatmap(pts);
-                };
-                ref.on('value', heatmapListener, function(err) { console.error('Heatmap DB error', err); });
+                enableHeatListeners();
             } else {
-                if (heatmapLayer) { map.removeLayer(heatmapLayer); heatmapLayer = null; }
-                if (heatmapListener) {
-                    firebase.database().ref('userLocations').off('value', heatmapListener);
-                    heatmapListener = null;
-                }
+                disableHeatListeners();
             }
         });
 
@@ -2093,7 +2100,7 @@
                 var lat = pos.coords.latitude;
                 var lng = pos.coords.longitude;
                 try {
-                    firebase.database().ref('userLocations/' + uid).set({ lat: lat, lng: lng, timestamp: firebase.database.ServerValue ? firebase.database.ServerValue.TIMESTAMP : Date.now() });
+                    firebase.database().ref('user_locations/' + uid).set({ lat: lat, lng: lng, timestamp: firebase.database.ServerValue ? firebase.database.ServerValue.TIMESTAMP : Date.now() });
                 } catch (err) {
                     console.error('Failed to write location to Realtime DB', err);
                 }
