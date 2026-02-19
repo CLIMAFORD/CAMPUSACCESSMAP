@@ -15,12 +15,14 @@
         <link rel="stylesheet" href="css/leaflet.photon.css">
         <link rel="stylesheet" href="css/leaflet-measure.css">
         <style>
-        #map {
-            width: 934px;
-            height: 675px;
-        }
+        /* make the map full-height and ensure routing/overlays are visible above tiles */
+        html, body, #map { height: 100%; margin: 0; padding: 0; }
+        .leaflet-routing-container { z-index: 700 !important; }
         </style>
         <title>MASENO UNIVERSITY ACCESS MAP</title>
+        <!-- Tailwind (Play CDN) + Alpine.js for lightweight reactivity -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script defer src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js"></script>
         <!-- Firebase SDKs -->
         <!-- Firebase App (Core) SDK -->
         <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -32,21 +34,19 @@
         <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
         <!-- Firebase Realtime Database (compat) -->
         <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-        <!-- Leaflet Routing Machine -->
+        <!-- Leaflet Routing Machine (script moved below Leaflet.js to ensure `L` is defined) -->
         <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css">
-        <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
-        <!-- Leaflet Heatmap -->
-        <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+        <!-- Leaflet Heatmap (script moved below Leaflet.js) -->
     </head>
-    <body>
-        <div id="map">
+    <body x-data="{ heatmapOn: false, sharing: false, showRoutingSettings:false, orsKey: '', useORS: true, init() { try { this.orsKey = localStorage.getItem('campus_ors_key') || ''; this.useORS = localStorage.getItem('campus_use_ors') !== 'false'; } catch(e) { /* storage blocked (tracking prevention) */ } }, saveORSKey() { try { localStorage.setItem('campus_ors_key', this.orsKey || ''); localStorage.setItem('campus_use_ors', this.useORS ? 'true' : 'false'); window.setORSFromUI(this.orsKey, this.useORS); alert('ORS key saved (browser only)'); } catch(e){ alert('Unable to save ORS key: ' + e.message); } }, clearORSKey() { try { localStorage.removeItem('campus_ors_key'); localStorage.removeItem('campus_use_ors'); this.orsKey = ''; this.useORS = false; window.setORSFromUI('', false); } catch(e) { /* ignore */ } } }">
+        <div id="map" class="w-full h-full">
         </div>
-        <div id="test-element" style="position: absolute; top: 10px; left: 10px; z-index: 1000; background: yellow; padding: 5px;">Test</div>
-        <div id="user-status" style="position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+        <div id="test-element" class="fixed top-3 left-3 z-50 bg-yellow-300 px-2 py-1 rounded text-sm">Test</div>
+        <div id="user-status" class="fixed top-3 right-3 z-50 bg-white p-3 rounded shadow text-sm">
             Signing in...
         </div>
-        <div style="position:absolute;top:50px;right:10px;z-index:1000;background:white;padding:12px;border:1px solid #ccc;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.2);width:280px;">
+        <div id="report-panel" class="fixed top-16 right-3 z-50 bg-white p-4 border border-gray-200 rounded-lg shadow w-72">
             <form id="reportForm">
                 <input id="desc" placeholder="Describe the issue..." style="width:100%;padding:8px;margin-bottom:10px;" required>
                 <label style="display:block;margin-bottom:6px;font-weight:bold;">Take photo with camera:</label>
@@ -57,27 +57,45 @@
             </form>
         </div>
         <!-- Routing Mode Selector and Clear Route Button -->
-        <div style="position:absolute;top:10px;right:10px;z-index:1000;background:white;padding:8px;border-radius:4px;border:1px solid #ccc;">
-            <label for="routing-mode">Mode:</label>
-            <select id="routing-mode">
+        <div id="routing-controls" class="fixed top-14 right-3 z-40 bg-white p-2 rounded border border-gray-200 shadow flex items-center gap-2 text-sm">
+            <label for="routing-mode" class="text-sm">Mode</label>
+            <select id="routing-mode" class="border rounded px-2 py-1 text-sm">
                 <option value="foot-walking">Walk</option>
                 <option value="driving-car">Drive</option>
                 <option value="cycling-regular">Cycle</option>
             </select>
-            <button id="clear-route" style="margin-left:8px;">Clear Route</button>
+            <button id="clear-route" class="ml-2 bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-sm">Clear</button>
+            <span id="routing-provider" class="text-xs text-gray-500 ml-2"></span>
+
+            <button @click="showRoutingSettings = !showRoutingSettings" class="ml-2 px-2 py-1 bg-gray-50 border rounded text-sm" title="Routing settings">⚙</button>
+
+            <div x-show="showRoutingSettings" x-cloak class="absolute right-0 mt-10 w-64 bg-white border border-gray-200 rounded shadow p-3 text-xs z-50">
+                <label class="block text-xs font-medium text-gray-600 mb-1">OpenRouteService API Key</label>
+                <input x-model="orsKey" placeholder="paste ORS key here" class="w-full border rounded px-2 py-1 mb-2 text-xs" />
+                <label class="flex items-center gap-2 mb-2"><input type="checkbox" x-model="useORS" class="form-checkbox h-4 w-4"> Use ORS when available</label>
+                <div class="flex gap-2">
+                    <button @click="saveORSKey()" class="flex-1 bg-blue-600 text-white px-2 py-1 rounded text-xs">Save</button>
+                    <button @click="clearORSKey()" class="flex-1 bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">Clear</button>
+                </div>
+                <div class="mt-2 text-gray-500 text-xs">Saved in browser only. ORS will fall back to OSRM if not available.</div>
+            </div>
         </div>
 
         <!-- Heatmap Toggle -->
-        <div style="position:absolute;top:170px;right:10px;z-index:1000;background:white;padding:8px;border-radius:4px;border:1px solid #ccc;">
-            <label><input type="checkbox" id="heatmap-toggle"> Show Crowd/Traffic Heatmap</label>
+        <div id="heatmap-control" class="fixed top-52 right-3 z-50 bg-white p-2 border border-gray-200 rounded shadow text-sm">
+            <label class="flex items-center gap-2">
+                <input type="checkbox" id="heatmap-toggle" class="form-checkbox h-4 w-4" x-model="heatmapOn"> <span>Show Crowd/Traffic Heatmap</span>
+            </label>
         </div>
 
         <!-- Share My Location Button -->
-        <div style="position:absolute;top:220px;right:10px;z-index:1000;background:white;padding:8px;border-radius:4px;border:1px solid #ccc;">
-            <button id="share-location">Share My Location</button>
+        <div class="fixed top-60 right-3 z-50 bg-white p-2 border border-gray-200 rounded shadow">
+            <button id="share-location" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Share My Location</button>
         </div>
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
+        <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+        <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
         <script src="js/L.Control.Layers.Tree.min.js"></script>
         <script src="js/L.Control.Locate.min.js"></script>
         <script src="js/multi-style-layer.js"></script>
@@ -215,8 +233,8 @@
         function setBounds() {
         }
         map.createPane('pane_OSMStandard_0');
-        map.getPane('pane_OSMStandard_0').style.zIndex = 400;
-        var layer_OSMStandard_0 = L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        map.getPane('pane_OSMStandard_0').style.zIndex = 200;
+        var layer_OSMStandard_0 = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             pane: 'pane_OSMStandard_0',
             opacity: 0.9,
             attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors, CC-BY-SA</a>',
@@ -1560,9 +1578,10 @@
             alert('Anonymous sign-in failed: ' + err.message);
         });
 
-        // Layer to hold issue markers
+        // Layer to hold issue markers (client-only visibility filter applied)
         var issuesLayer = L.layerGroup().addTo(map);
         var issueMarkers = {}; // map of docId -> marker
+        var issueMeta = {}; // docId -> { createdAt: Date }
 
         function makePopupContent(docId, data) {
             var reportedTime = data.createdAt && data.createdAt.toDate ? data.createdAt.toDate().toLocaleString() : 'just now';
@@ -1570,7 +1589,7 @@
                        '<div>Status: <em>' + (data.status || 'open') + '</em></div>' +
                        '<div>Reported: ' + reportedTime + '</div>';
             if (window.currentUserUid && data.createdBy === window.currentUserUid) {
-                html += '<div style="margin-top:6px;">' +
+                html += '<div class="mt-2">' +
                         '<select id="status-select-' + docId + '">' +
                         '<option value="open">open</option>' +
                         '<option value="in progress">in progress</option>' +
@@ -1582,18 +1601,64 @@
             return html;
         }
 
-        // Real-time listener for issues collection
+        function isCreatedToday(createdAt) {
+            if (!createdAt) return true; // treat unknown as today
+            var d = createdAt instanceof Date ? createdAt : (createdAt.toDate ? createdAt.toDate() : new Date(createdAt));
+            var start = new Date();
+            start.setHours(0,0,0,0);
+            return d >= start;
+        }
+
+        function scheduleMidnightCleanup() {
+            var now = new Date();
+            var nextMidnight = new Date(now);
+            nextMidnight.setDate(now.getDate() + 1);
+            nextMidnight.setHours(0,0,0,0);
+            var ms = nextMidnight - now;
+            setTimeout(function() {
+                // remove any markers not created today
+                var start = new Date(); start.setHours(0,0,0,0);
+                Object.keys(issueMeta).forEach(function(id) {
+                    var meta = issueMeta[id];
+                    if (!meta || !meta.createdAt) return;
+                    if (meta.createdAt < start) {
+                        if (issueMarkers[id]) {
+                            map.removeLayer(issueMarkers[id]);
+                            delete issueMarkers[id];
+                        }
+                        delete issueMeta[id];
+                    }
+                });
+                // schedule again for next midnight
+                scheduleMidnightCleanup();
+            }, ms);
+        }
+        scheduleMidnightCleanup();
+
+        // Real-time listener for issues collection — only show today's issues on the map
         db.collection('issues').onSnapshot(function(snapshot) {
             snapshot.docChanges().forEach(function(change) {
                 var doc = change.doc;
                 var id = doc.id;
                 var data = doc.data();
+                var createdAtDate = data.createdAt && data.createdAt.toDate ? data.createdAt.toDate() : new Date();
+
+                // If issue is older than today's midnight, do not show on map (client-side only)
+                if (!isCreatedToday(createdAtDate)) {
+                    if (issueMarkers[id]) {
+                        map.removeLayer(issueMarkers[id]);
+                        delete issueMarkers[id];
+                        delete issueMeta[id];
+                    }
+                    return;
+                }
 
                 if (change.type === 'removed') {
                     if (issueMarkers[id]) {
                         map.removeLayer(issueMarkers[id]);
                         delete issueMarkers[id];
                     }
+                    delete issueMeta[id];
                     return;
                 }
 
@@ -1606,6 +1671,8 @@
                     iconSize: [20,20],
                     iconAnchor: [10,10]
                 });
+
+                issueMeta[id] = { createdAt: createdAtDate };
 
                 if (issueMarkers[id]) {
                     issueMarkers[id].setLatLng([lat, lng]);
@@ -1679,8 +1746,42 @@
         /* ---------------- Directions / Routing (Leaflet Routing Machine + OpenRouteService) ---------------- */
         // Replace with your OpenRouteService API key
         var orsApiKey = 'PUT_YOUR_ORS_API_KEY_HERE';
+        // prefer saved key from browser storage (if available)
+        try {
+            var _savedOrs = localStorage.getItem('campus_ors_key');
+            if (_savedOrs && _savedOrs.trim()) {
+                orsApiKey = _savedOrs.trim();
+            }
+        } catch (e) {
+            /* storage access blocked (tracking prevention) — ignore */
+        }
+
+        // called from the UI to update the router/key at runtime
+        window.setORSFromUI = function(key, use) {
+            try {
+                orsApiKey = key && key.trim() ? key.trim() : 'PUT_YOUR_ORS_API_KEY_HERE';
+                if (typeof routingControl !== 'undefined' && routingControl.setRouter) {
+                    var router = (use && orsApiKey && orsApiKey !== 'PUT_YOUR_ORS_API_KEY_HERE') ? createORSRouter('foot-walking') : L.Routing.osrmv1();
+                    routingControl.setRouter(router);
+                    routingControl.route();
+                }
+                var el = document.getElementById('routing-provider');
+                if (el) el.innerText = (use && orsApiKey && orsApiKey !== 'PUT_YOUR_ORS_API_KEY_HERE') ? 'ORS' : 'OSRM (fallback)';
+            } catch (err) {
+                console.error('setORSFromUI error', err);
+            }
+        };
 
         function createORSRouter(profile) {
+            var useORSFlag = true;
+            try { useORSFlag = localStorage.getItem('campus_use_ors') !== 'false'; } catch(e) { useORSFlag = true; }
+            if (!useORSFlag) {
+                return L.Routing.osrmv1();
+            }
+            if (!orsApiKey || orsApiKey === 'PUT_YOUR_ORS_API_KEY_HERE') {
+                console.warn('No ORS API key configured — using OSRM fallback.');
+                return L.Routing.osrmv1();
+            }
             if (L.Routing && L.Routing.openrouteservice) {
                 return L.Routing.openrouteservice(orsApiKey, { profile: profile });
             }
@@ -1698,6 +1799,12 @@
             collapseBtn: true,
             autoRoute: true
         }).addTo(map);
+        // show which provider is active (ORS if configured, otherwise OSRM fallback)
+        if (document.getElementById('routing-provider')) {
+            var useORSFlag = true;
+            try { useORSFlag = localStorage.getItem('campus_use_ors') !== 'false'; } catch(e) { useORSFlag = true; }
+            document.getElementById('routing-provider').innerText = ( useORSFlag && orsApiKey && orsApiKey !== 'PUT_YOUR_ORS_API_KEY_HERE' ) ? 'ORS' : 'OSRM (fallback)';
+        }
 
         // Add instructions panel styling (routing control contains its own panel)
 
